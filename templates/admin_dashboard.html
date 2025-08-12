@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Medical Patient Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .section h2 {
+            color: #34495e;
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stats-grid-compact {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .stat-card-small {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .stat-card-directory {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .stat-number {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #3498db;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            margin-bottom: 5px;
+        }
+        .stat-number-path {
+            font-size: 0.6em;
+            font-weight: bold;
+            color: #3498db;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            margin-bottom: 5px;
+            line-height: 1.1;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+        }
+        .directory-path {
+            font-size: 0.7em;
+            color: #95a5a6;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            display: block;
+            line-height: 1.2;
+        }
+        .file-list {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background-color 0.2s;
+        }
+        .file-item:hover {
+            background-color: #f8f9fa;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-info {
+            flex: 1;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .file-details {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-success {
+            background: #27ae60;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .refresh-btn {
+            background: #f39c12;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #e67e22;
+        }
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #27ae60;
+            background: #f0f9f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Admin Dashboard</h1>
+        <p style="text-align: center; color: #7f8c8d;">Monitor your Medical Patient Simulator logs and feedback</p>
+        
+        <button class="btn refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+        
+        <!-- Logs Section -->
+        <div class="section">
+            <h2>📊 Conversation Logs</h2>
+            <div id="logs-stats" class="stats-grid-compact"></div>
+            <div id="logs-files" class="file-list"></div>
+        </div>
+        
+        <!-- Feedback Section -->
+        <div class="section">
+            <h2>💬 Feedback Submissions</h2>
+            <div id="feedback-stats" class="stats-grid-compact"></div>
+            <div id="feedback-files" class="file-list"></div>
+        </div>
+        
+        <!-- System Info -->
+        <div class="section">
+            <h2>⚙️ System Information</h2>
+            <div id="system-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+        });
+
+        async function refreshData() {
+            await Promise.all([
+                loadLogs(),
+                loadFeedback(),
+                loadSystemInfo()
+            ]);
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch('/view_logs');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('logs-stats').innerHTML = `<div class="error">${data.error}</div>`;
+                    document.getElementById('logs-files').innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+
+                // Update stats
+                const totalLines = data.log_files.reduce((sum, file) => sum + (file.line_count || 0), 0);
+                const totalFiles = data.log_files.length;
+                
+                document.getElementById('logs-stats').innerHTML = `
+                    <div class="stat-card-small">
+                        <div class="stat-number">${totalFiles}</div>
+                        <div class="stat-label">Log Files</div>
+                    </div>
+                    <div class="stat-card-small">
+                        <div class="stat-number">${totalLines}</div>
+                        <div class="stat-label">Total Entries</div>
+                    </div>
+                    <div class="stat-card-directory">
+                        <div class="stat-number-path">${data.logs_directory}</div>
+                        <div class="stat-label">Directory</div>
+                    </div>
+                `;
+
+                // Update file list
+                let filesHtml = '';
+                data.log_files.forEach(file => {
+                    const date = new Date(file.last_modified * 1000).toLocaleString();
+                    filesHtml += `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${file.filename}</div>
+                                <div class="file-details">
+                                    Entries: ${file.line_count || 'N/A'} | 
+                                    Modified: ${date}
+                                </div>
+                            </div>
+                            <a href="/download_logs/${file.filename}" class="btn btn-success">📥 Download</a>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('logs-files').innerHTML = filesHtml || '<p>No log files found</p>';
+                
+            } catch (error) {
+                document.getElementById('logs-stats').innerHTML = `<div class="error">Failed to load logs: ${error.message}</div>`;
+            }
+        }
+
+        async function loadFeedback() {
+            try {
+                const response = await fetch('/view_feedback');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('feedback-stats').innerHTML = `<div class="error">${data.error}</div>`;
+                    document.getElementById('feedback-files').innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+
+                // Update stats
+                const totalLines = data.feedback_files.reduce((sum, file) => sum + (file.line_count || 0), 0);
+                const totalFiles = data.feedback_files.length;
+                
+                document.getElementById('feedback-stats').innerHTML = `
+                    <div class="stat-card-small">
+                        <div class="stat-number">${totalFiles}</div>
+                        <div class="stat-label">Feedback Files</div>
+                    </div>
+                    <div class="stat-card-small">
+                        <div class="stat-number">${totalLines}</div>
+                        <div class="stat-label">Total Submissions</div>
+                    </div>
+                    <div class="stat-card-directory">
+                        <div class="stat-number-path">${data.feedback_directory}</div>
+                        <div class="stat-label">Directory</div>
+                    </div>
+                `;
+
+                // Update file list
+                let filesHtml = '';
+                data.feedback_files.forEach(file => {
+                    const date = new Date(file.last_modified * 1000).toLocaleString();
+                    filesHtml += `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${file.filename}</div>
+                                <div class="file-details">
+                                    Submissions: ${file.line_count || 'N/A'} | 
+                                    Modified: ${date}
+                                </div>
+                            </div>
+                            <a href="/download_feedback/${file.filename}" class="btn btn-success">📥 Download</a>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('feedback-files').innerHTML = filesHtml || '<p>No feedback files found</p>';
+                
+            } catch (error) {
+                document.getElementById('feedback-stats').innerHTML = `<div class="error">Failed to load feedback: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSystemInfo() {
+            const info = {
+                'Current Time': new Date().toLocaleString(),
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language
+            };
+
+            let infoHtml = '<div class="stats-grid">';
+            Object.entries(info).forEach(([key, value]) => {
+                infoHtml += `
+                    <div class="stat-card">
+                        <div class="stat-label">${key}</div>
+                        <div class="stat-number" style="font-size: 1em;">${value}</div>
+                    </div>
+                `;
+            });
+            infoHtml += '</div>';
+            
+            document.getElementById('system-info').innerHTML = infoHtml;
+        }
+    </script>
+</body>
+</html>

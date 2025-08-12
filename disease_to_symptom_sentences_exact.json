@@ -1,0 +1,156 @@
+{
+  "Appendicitis": [
+    "feeling or being sick, or loss of appetite",
+    "a high temperature",
+    "constipation or diarrhoea",
+    "peeing more than usual",
+    "sudden confusion (in older people)",
+    "urinary tract infections",
+    "kidney stonesorgallstones",
+    "bowel problems such asirritable bowel syndromeorCrohn's disease",
+    "conditions affecting your womb or ovaries, such aspelvic inflammatory diseaseor a rupturedovarian cyst",
+    "anectopic pregnancy",
+    "The pain may feel worse when you move, cough or press on the area. It may feel slightly better when you pull your knees up to your chest."
+  ],
+  "Asthma": [
+    "wheezing",
+    "coughing",
+    "shortness of breath",
+    "your chest feeling tight"
+  ],
+  "Chickenpox": [
+    "a high temperature",
+    "aches and pains, and generally feel unwell",
+    "loss of appetite",
+    "be anywhere on the body, including inside the mouth and around the genitals, which can be painful",
+    "spread or stay in a small area",
+    "The main symptom of chickenpox is an itchy, spotty rash. It can be anywhere on the body."
+  ],
+  "Constipation": [
+    "you have not had a poo at least 3 times during the last week or you're pooing less often than usual",
+    "the poo is unusually large or small and is dry, hard or lumpy",
+    "you are straining or in pain when you have a poo",
+    "you feel like you haven't fully emptied your bowels"
+  ],
+  "COVID-19": [
+    "a high temperature or shivering (chills) – a high temperature means you feel hot to touch on your chest or back (you do not need to measure your temperature)",
+    "a new, continuous cough – this means coughing a lot for more than an hour, or 3 or more coughing episodes in 24 hours",
+    "a loss or change to your sense of smell or taste",
+    "shortness of breath",
+    "feeling tired or exhausted",
+    "an aching body",
+    "a headache",
+    "a sore throat",
+    "a blocked or runny nose",
+    "loss of appetite",
+    "diarrhoea",
+    "feeling sick or being sick"
+  ],
+  "Ear infections": [
+    "pain inside the ear (earache)",
+    "a high temperature",
+    "difficulty hearing",
+    "discharge running out of the ear",
+    "a feeling of pressure or fullness inside the ear",
+    "itching and irritation in and around the ear",
+    "scaly skin in and around the ear",
+    "rub or pull their ear",
+    "not react to some sounds",
+    "be irritable or restless",
+    "be off their food",
+    "keep losing their balance"
+  ],
+  "Flu": [
+    "a sudden high temperature",
+    "an aching body",
+    "feeling tired or exhausted",
+    "a dry cough",
+    "a sore throat",
+    "a headache",
+    "difficulty sleeping",
+    "loss of appetite",
+    "diarrhoea or tummy pain",
+    "feeling sick and being sick"
+  ],
+  "Food poisoning": [
+    "feeling sick or being sick",
+    "diarrhoea",
+    "tummy pain",
+    "a high temperature",
+    "feeling generally unwell"
+  ],
+  "Hay fever": [
+    "sneezing and coughing",
+    "a runny or blocked nose",
+    "itchy, red or watery eyes",
+    "itchy throat, mouth, nose and ears",
+    "loss of smell",
+    "pain around the sides of your head and your forehead",
+    "headache",
+    "feeling tired"
+  ],
+  "Insomnia": [
+    "find it hard to go to sleep",
+    "wake up several times during the night",
+    "lie awake at night",
+    "wake up early and cannot go back to sleep",
+    "still feel tired after waking up",
+    "find it hard to nap during the day even though you're tired",
+    "feel tired and irritable during the day",
+    "find it difficult to concentrate during the day because you're tired"
+  ],
+  "Migraine": [
+    "feeling very tired and yawning a lot",
+    "craving certain foods or feeling thirsty",
+    "changes in your mood",
+    "a stiff neck",
+    "peeing more",
+    "problems with your sight, such as seeing zigzag lines or flashing lights",
+    "numbness or a tingling that feels like pins and needles",
+    "feeling dizzy",
+    "difficulty speaking",
+    "A migraine tends to be a very bad headache with a throbbing pain on 1 side of the head."
+  ],
+  "Diabetes (type 2)": [
+    "feeling very tired",
+    "peeing more than usual",
+    "feeling thirsty all the time",
+    "losing weight without trying to",
+    "blurred vision",
+    "cuts or wounds taking longer to heal",
+    "itching around your penis or vagina, or you keep getting thrush"
+  ],
+  "Tonsillitis": [
+    "a sore throat",
+    "problems swallowing",
+    "a high temperature",
+    "coughing",
+    "a headache",
+    "feeling and being sick",
+    "earache",
+    "feeling tired",
+    "swollen, painful glands in your neck (feels like a lump on the side of your neck)",
+    "pus-filled spots or white patches on your tonsils",
+    "bad breath",
+    "Tonsillitis can feel like a bad cold or flu. The tonsils at the sides of your throat will be red and swollen."
+  ],
+  "Food allergy": [
+    "feeling dizzy or lightheaded",
+    "itchy skin or a raised rash (hives)",
+    "swelling of the lips, face and eyes (angioedema)",
+    "coughing, wheezing, breathlessness, noisy breathing or a hoarse voice",
+    "sneezing or an itchy, runny or blocked nose",
+    "feeling sick or being sick",
+    "tummy pain",
+    "diarrhoea",
+    "Symptoms of a food allergy can affect any part of the body, including different parts of the body at the same time."
+  ],
+  "Heartburn and acid reflux": [
+    "heartburn – a burning sensation in the middle of your chest",
+    "an unpleasant sour taste in your mouth, caused by stomach acid",
+    "a cough or hiccups that keep coming back",
+    "a hoarse voice",
+    "bad breath",
+    "bloating and feeling sick"
+  ]
+}

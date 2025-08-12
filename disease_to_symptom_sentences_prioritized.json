@@ -1,0 +1,205 @@
+{
+  "Appendicitis": {
+    "primary_symptoms": [
+      "pain in the right side of your abdomen (tummy)",
+      "pain that gets worse when you move, cough or press on the area",
+      "pain that feels slightly better when you pull your knees up to your chest"
+    ],
+    "secondary_symptoms": [
+      "feeling or being sick, or loss of appetite",
+      "a high temperature",
+      "constipation or diarrhoea",
+      "peeing more than usual",
+      "sudden confusion (in older people)"
+    ]
+  },
+  "Asthma": {
+    "primary_symptoms": [
+      "wheezing",
+      "shortness of breath",
+      "your chest feeling tight"
+    ],
+    "secondary_symptoms": [
+      "coughing"
+    ]
+  },
+  "Chickenpox": {
+    "primary_symptoms": [
+      "an itchy, spotty rash that can be anywhere on the body",
+      "spots that can be anywhere on the body, including inside the mouth and around the genitals"
+    ],
+    "secondary_symptoms": [
+      "a high temperature",
+      "aches and pains, and generally feel unwell",
+      "loss of appetite"
+    ]
+  },
+  "Constipation": {
+    "primary_symptoms": [
+      "you have not had a poo at least 3 times during the last week",
+      "the poo is unusually large or small and is dry, hard or lumpy",
+      "you are straining or in pain when you have a poo"
+    ],
+    "secondary_symptoms": [
+      "you feel like you haven't fully emptied your bowels"
+    ]
+  },
+  "COVID-19": {
+    "primary_symptoms": [
+      "a high temperature or shivering (chills)",
+      "a new, continuous cough",
+      "a loss or change to your sense of smell or taste"
+    ],
+    "secondary_symptoms": [
+      "shortness of breath",
+      "feeling tired or exhausted",
+      "an aching body",
+      "a headache",
+      "a sore throat",
+      "a blocked or runny nose",
+      "loss of appetite",
+      "diarrhoea",
+      "feeling sick or being sick"
+    ]
+  },
+  "Ear infections": {
+    "primary_symptoms": [
+      "pain inside the ear (earache)",
+      "a feeling of pressure or fullness inside the ear"
+    ],
+    "secondary_symptoms": [
+      "a high temperature",
+      "difficulty hearing",
+      "discharge running out of the ear",
+      "itching and irritation in and around the ear",
+      "scaly skin in and around the ear"
+    ]
+  },
+  "Flu": {
+    "primary_symptoms": [
+      "a sudden high temperature",
+      "an aching body",
+      "feeling tired or exhausted"
+    ],
+    "secondary_symptoms": [
+      "a dry cough",
+      "a sore throat",
+      "a headache",
+      "difficulty sleeping",
+      "loss of appetite",
+      "diarrhoea or tummy pain",
+      "feeling sick and being sick"
+    ]
+  },
+  "Food poisoning": {
+    "primary_symptoms": [
+      "feeling sick or being sick",
+      "diarrhoea",
+      "tummy pain"
+    ],
+    "secondary_symptoms": [
+      "a high temperature",
+      "feeling generally unwell"
+    ]
+  },
+  "Hay fever": {
+    "primary_symptoms": [
+      "sneezing and coughing",
+      "a runny or blocked nose",
+      "itchy, red or watery eyes"
+    ],
+    "secondary_symptoms": [
+      "itchy throat, mouth, nose and ears",
+      "loss of smell",
+      "pain around the sides of your head and your forehead",
+      "headache",
+      "feeling tired"
+    ]
+  },
+  "Insomnia": {
+    "primary_symptoms": [
+      "find it hard to go to sleep",
+      "wake up several times during the night",
+      "lie awake at night"
+    ],
+    "secondary_symptoms": [
+      "wake up early and cannot go back to sleep",
+      "still feel tired after waking up",
+      "find it hard to nap during the day even though you're tired",
+      "feel tired and irritable during the day",
+      "find it difficult to concentrate during the day because you're tired"
+    ]
+  },
+  "Migraine": {
+    "primary_symptoms": [
+      "a very bad headache with a throbbing pain on 1 side of the head",
+      "problems with your sight, such as seeing zigzag lines or flashing lights"
+    ],
+    "secondary_symptoms": [
+      "feeling very tired and yawning a lot",
+      "craving certain foods or feeling thirsty",
+      "changes in your mood",
+      "a stiff neck",
+      "peeing more",
+      "numbness or a tingling that feels like pins and needles",
+      "feeling dizzy",
+      "difficulty speaking"
+    ]
+  },
+  "Diabetes (type 2)": {
+    "primary_symptoms": [
+      "feeling very thirsty all the time",
+      "peeing more than usual",
+      "feeling very tired"
+    ],
+    "secondary_symptoms": [
+      "losing weight without trying to",
+      "blurred vision",
+      "cuts or wounds taking longer to heal",
+      "itching around your penis or vagina, or you keep getting thrush"
+    ]
+  },
+  "Tonsillitis": {
+    "primary_symptoms": [
+      "a sore throat",
+      "problems swallowing",
+      "swollen, painful glands in your neck (feels like a lump on the side of your neck)"
+    ],
+    "secondary_symptoms": [
+      "a high temperature",
+      "coughing",
+      "a headache",
+      "feeling and being sick",
+      "earache",
+      "feeling tired",
+      "pus-filled spots or white patches on your tonsils",
+      "bad breath"
+    ]
+  },
+  "Food allergy": {
+    "primary_symptoms": [
+      "itchy skin or a raised rash (hives)",
+      "swelling of the lips, face and eyes (angioedema)"
+    ],
+    "secondary_symptoms": [
+      "feeling dizzy or lightheaded",
+      "coughing, wheezing, breathlessness, noisy breathing or a hoarse voice",
+      "sneezing or an itchy, runny or blocked nose",
+      "feeling sick or being sick",
+      "tummy pain",
+      "diarrhoea"
+    ]
+  },
+  "Heartburn and acid reflux": {
+    "primary_symptoms": [
+      "heartburn – a burning sensation in the middle of your chest",
+      "an unpleasant sour taste in your mouth, caused by stomach acid"
+    ],
+    "secondary_symptoms": [
+      "a cough or hiccups that keep coming back",
+      "a hoarse voice",
+      "bad breath",
+      "bloating and feeling sick"
+    ]
+  }
+}

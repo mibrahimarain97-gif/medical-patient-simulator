@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medical Patient Simulator - Real 3D Models</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-container { display: flex; height: 100vh; }
+        .control-panel {
+            width: 30%; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); padding: 20px; overflow-y: auto;
+        }
+        .control-section { margin-bottom: 25px; }
+        .control-section h3 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        
+        .model-selector {
+            margin-bottom: 20px;
+        }
+        .model-btn {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .model-btn:hover { transform: translateY(-1px); }
+        .model-btn.active { background: linear-gradient(45deg, #27ae60, #229954); }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .action-btn {
+            padding: 12px 8px; border: none; border-radius: 8px;
+            background: linear-gradient(45deg, #4CAF50, #45a049); color: white; cursor: pointer;
+            font-size: 0.9em; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(76, 175, 80, 0.4); }
+        .action-btn:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; }
+        
+        .clear-btn { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        .log-container { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8em; height: 200px; overflow-y: auto; border: 2px solid #333; }
+        .log-entry { margin-bottom: 5px; padding: 2px 0; }
+        .log-entry.success { color: #00ff00; } .log-entry.error { color: #ff4444; } .log-entry.info { color: #44aaff; } .log-entry.warning { color: #ffaa44; }
+        
+        .character-panel {
+            width: 70%; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+        #threeContainer { position: absolute; inset: 0; }
+        canvas { display: block; }
+        .status-display {
+            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 12px 14px;
+            border-radius: 10px; font-size: 1.0em; font-weight: bold; min-width: 200px; text-align: center;
+        }
+        .badge { position: absolute; top: 70px; left: 20px; background: rgba(255,255,255,0.85); color: #333; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; }
+        .model-info { position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,0.9); color: #333; padding: 10px; border-radius: 8px; font-size: 0.8em; max-width: 250px; }
+    </style>
+    <script src="/static/vendor/three/three.min.js"></script>
+    <script src="/static/vendor/three/OrbitControls.js"></script>
+    <script src="/static/vendor/three/GLTFLoader.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>🎯 Select 3D Model</h3>
+                <div class="model-selector">
+                    <button class="model-btn" onclick="loadSpecificModel('robocop')" id="robocop-btn">
+                        🤖 Robocop (Animated)
+                    </button>
+                    <button class="model-btn" onclick="loadSpecificModel('suited-male')" id="suited-btn">
+                        👔 Suited Male (Static)
+                    </button>
+                    <button class="model-btn" onclick="loadSpecificModel('female-casual')" id="female-btn">
+                        👩 Female Casual (Static)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h3>🎭 Medical Symptoms</h3>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="performAction('wave')" id="wave-btn">👋 Wave</button>
+                    <button class="action-btn" onclick="performAction('cough')" id="cough-btn">😷 Cough</button>
+                    <button class="action-btn" onclick="performAction('headache')" id="headache-btn">🤕 Headache</button>
+                    <button class="action-btn" onclick="performAction('itch')" id="itch-btn">🤏 Itch</button>
+                    <button class="action-btn" onclick="performAction('fever')" id="fever-btn">🤒 Fever</button>
+                    <button class="action-btn" onclick="performAction('stomach')" id="stomach-btn">🤱 Stomach</button>
+                    <button class="action-btn" onclick="performAction('leg')" id="leg-btn">🦵 Leg</button>
+                    <button class="action-btn" onclick="performAction('dizzy')" id="dizzy-btn">😵 Dizzy</button>
+                    <button class="action-btn" onclick="performAction('sneeze')" id="sneeze-btn">🤧 Sneeze</button>
+                    <button class="action-btn" onclick="performAction('nausea')" id="nausea-btn">🤢 Nausea</button>
+                    <button class="action-btn" onclick="performAction('blood')" id="blood-btn">🩸 Blood</button>
+                    <button class="action-btn" onclick="performAction('chest')" id="chest-btn">❤️ Chest</button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h3>📝 Activity Log</h3>
+                <div class="log-container" id="actionLog">
+                    <div class="log-entry info">[SYSTEM] Medical simulator initializing...</div>
+                </div>
+                <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+            </div>
+        </div>
+        
+        <div class="character-panel">
+            <div class="status-display" id="statusDisplay">Select a 3D model to begin</div>
+            <div class="badge">Left mouse: rotate • Right mouse: pan • Wheel: zoom</div>
+            <div class="model-info" id="modelInfo" style="display: none;">
+                <strong>Model:</strong> <span id="modelName">-</span><br>
+                <strong>Animations:</strong> <span id="animCount">-</span><br>
+                <strong>Type:</strong> <span id="modelType">-</span>
+            </div>
+            <div id="threeContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, controls, clock;
+        let currentModel = null, mixer = null, clipsByName = {}, originalMaterials = [];
+        let currentAction = null, actionTimeout = null;
+        let activeEffects = [];
+        
+        const container = document.getElementById('threeContainer');
+        
+        // Model configurations
+        const MODELS = {
+            'robocop': {
+                url: '/3d examples/robocop_rigged_hatchxr.glb',
+                name: 'Robocop (Rigged)',
+                type: 'Animated',
+                scale: [1.0, 1.0, 1.0],
+                position: [0, 0, 0],
+                hasAnimations: true,
+                medicalAppropriate: false
+            },
+            'suited-male': {
+                url: '/3d examples/suited_male_character.glb',
+                name: 'Suited Male Character',
+                type: 'Static High-Detail',
+                scale: [0.01, 0.01, 0.01], // Large model, scale down
+                position: [0, 0, 0],
+                hasAnimations: false,
+                medicalAppropriate: true
+            },
+            'female-casual': {
+                // We'll create this from the OBJ files - placeholder for now
+                url: '/3d examples/Animated Women Characters - Feb 2019-20250809T192836Z-1-001/Animated Women Characters - Feb 2019/FBX/Female_Casual.fbx',
+                name: 'Female Casual',
+                type: 'Static Model',
+                scale: [0.02, 0.02, 0.02],
+                position: [0, 0, 0],
+                hasAnimations: false,
+                medicalAppropriate: true
+            }
+        };
+        
+        // Logging functions
+        function log(msg, type='info') { 
+            const el = document.getElementById('actionLog'); 
+            const t = new Date().toLocaleTimeString(); 
+            const d = document.createElement('div'); 
+            d.className = `log-entry ${type}`; 
+            d.textContent = `[${t}] ${msg}`; 
+            el.appendChild(d); 
+            el.scrollTop = el.scrollHeight; 
+            console[type === 'error' ? 'error' : 'log'](`${type.toUpperCase()}: ${msg}`); 
+        }
+        
+        function clearLog() { 
+            document.getElementById('actionLog').innerHTML = '<div class="log-entry info">[SYSTEM] Log cleared</div>'; 
+        }
+        
+        function updateStatus(s) { 
+            const el = document.getElementById('statusDisplay'); 
+            if (el) el.textContent = s; 
+            log(`Status: ${s}`, 'info'); 
+        }
+        
+        function updateModelInfo(modelKey) {
+            const info = document.getElementById('modelInfo');
+            const model = MODELS[modelKey];
+            if (model && info) {
+                document.getElementById('modelName').textContent = model.name;
+                document.getElementById('animCount').textContent = model.hasAnimations ? Object.keys(clipsByName).length : '0 (Static)';
+                document.getElementById('modelType').textContent = model.type;
+                info.style.display = 'block';
+            }
+        }
+        
+        // Three.js initialization
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbfd9ff);
+            
+            const aspect = container.clientWidth / container.clientHeight;
+            camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+            camera.position.set(2, 1.5, 4);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+            
+            // Lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+            hemiLight.position.set(0, 2, 0);
+            scene.add(hemiLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(3, 5, 2);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+            
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xd3f2d3, 
+                roughness: 1 
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 1.2, 0);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.update();
+            
+            clock = new THREE.Clock();
+            
+            window.addEventListener('resize', onResize);
+            animate();
+            
+            log('3D scene initialized successfully', 'success');
+        }
+        
+        function onResize() {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = clock.getDelta();
+            
+            if (mixer) mixer.update(deltaTime);
+            updateEffects(deltaTime);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // Model loading
+        function loadSpecificModel(modelKey) {
+            const model = MODELS[modelKey];
+            if (!model) {
+                log(`Unknown model: ${modelKey}`, 'error');
+                return;
+            }
+            
+            // Clear previous model
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+            if (mixer) {
+                mixer.stopAllAction();
+                mixer = null;
+            }
+            clipsByName = {};
+            originalMaterials = [];
+            
+            // Update UI
+            document.querySelectorAll('.model-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(modelKey + '-btn').classList.add('active');
+            
+            updateStatus(`Loading ${model.name}...`);
+            log(`Loading model: ${model.name} from ${model.url}`, 'info');
+            
+            const loader = new THREE.GLTFLoader();
+            
+            loader.load(
+                model.url,
+                (gltf) => {
+                    log(`Successfully loaded ${model.name}`, 'success');
+                    
+                    currentModel = gltf.scene;
+                    
+                    // Apply model configuration
+                    currentModel.scale.set(...model.scale);
+                    currentModel.position.set(...model.position);
+                    
+                    // Enable shadows
+                    currentModel.traverse((object) => {
+                        if (object.isMesh) {
+                            object.castShadow = true;
+                            object.receiveShadow = true;
+                            
+                            // Store original materials for symptom effects
+                            if (object.material) {
+                                originalMaterials.push({
+                                    mesh: object,
+                                    material: object.material,
+                                    emissive: object.material.emissive ? object.material.emissive.clone() : null
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Position model on ground
+                    const bbox = new THREE.Box3().setFromObject(currentModel);
+                    const minY = bbox.min.y;
+                    currentModel.position.y -= minY;
+                    
+                    scene.add(currentModel);
+                    
+                    // Setup animations if available
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(currentModel);
+                        
+                        gltf.animations.forEach((clip) => {
+                            clipsByName[clip.name] = clip;
+                        });
+                        
+                        // Play idle animation if available
+                        const idleClip = clipsByName['Idle'] || clipsByName['idle'] || clipsByName['stand'] || gltf.animations[0];
+                        if (idleClip) {
+                            const action = mixer.clipAction(idleClip);
+                            action.play();
+                        }
+                        
+                        log(`Loaded ${gltf.animations.length} animations: ${gltf.animations.map(a => a.name).join(', ')}`, 'success');
+                    } else {
+                        log('No animations found in this model', 'warning');
+                    }
+                    
+                    updateModelInfo(modelKey);
+                    updateStatus(`${model.name} loaded - Ready for medical simulation`);
+                    
+                    // Enable/disable action buttons based on model capabilities
+                    updateActionButtons(model);
+                },
+                (progress) => {
+                    if (progress.total) {
+                        const percent = ((progress.loaded / progress.total) * 100).toFixed(0);
+                        updateStatus(`Loading ${model.name}... ${percent}%`);
+                    }
+                },
+                (error) => {
+                    log(`Failed to load ${model.name}: ${error}`, 'error');
+                    updateStatus(`Failed to load ${model.name}`);
+                }
+            );
+        }
+        
+        function updateActionButtons(model) {
+            const buttons = document.querySelectorAll('.action-btn');
+            buttons.forEach(btn => {
+                if (model.hasAnimations) {
+                    btn.disabled = false;
+                    btn.title = 'Click to perform this medical symptom animation';
+                } else {
+                    // For static models, only enable visual effect actions
+                    const action = btn.onclick.toString().match(/performAction\('(.+?)'\)/)[1];
+                    const visualEffects = ['headache', 'fever', 'stomach', 'chest', 'blood', 'nausea'];
+                    btn.disabled = !visualEffects.includes(action);
+                    btn.title = btn.disabled ? 'Not available for static models' : 'Visual effect only (no animation)';
+                }
+            });
+        }
+        
+        // Medical action system
+        function performAction(action) {
+            if (!currentModel) {
+                log('No model loaded - please select a model first', 'warning');
+                return;
+            }
+            
+            if (currentAction) {
+                log(`Already performing ${currentAction}, please wait...`, 'warning');
+                return;
+            }
+            
+            currentAction = action;
+            log(`Performing medical symptom: ${action}`, 'info');
+            
+            // Clear any previous effects
+            resetEffects();
+            
+            switch (action) {
+                case 'wave':
+                    performWave();
+                    break;
+                case 'cough':
+                    performCough();
+                    break;
+                case 'headache':
+                    performHeadache();
+                    break;
+                case 'fever':
+                    performFever();
+                    break;
+                case 'stomach':
+                    performStomach();
+                    break;
+                case 'chest':
+                    performChest();
+                    break;
+                case 'itch':
+                    performItch();
+                    break;
+                case 'leg':
+                    performLeg();
+                    break;
+                case 'dizzy':
+                    performDizzy();
+                    break;
+                case 'sneeze':
+                    performSneeze();
+                    break;
+                case 'nausea':
+                    performNausea();
+                    break;
+                case 'blood':
+                    performBleeding();
+                    break;
+                default:
+                    log(`Unknown action: ${action}`, 'error');
+                    currentAction = null;
+                    return;
+            }
+            
+            // Auto-reset after 5 seconds
+            actionTimeout = setTimeout(() => {
+                resetEffects();
+                currentAction = null;
+                log(`${action} animation completed`, 'success');
+            }, 5000);
+        }
+        
+        // Individual medical action implementations
+        function performWave() {
+            if (mixer && clipsByName['waveHello']) {
+                playAnimation('waveHello');
+                log('Playing built-in wave animation', 'success');
+            } else {
+                // Programmatic wave for static models
+                log('Simulating wave motion (static model)', 'info');
+                // Add programmatic arm movement here if needed
+            }
+        }
+        
+        function performCough() {
+            if (mixer && (clipsByName['cough'] || clipsByName['Cough'])) {
+                playAnimation('cough');
+            } else {
+                // Visual effects for cough
+                addFaceColorEffect(0xff9999, 3000); // Reddish face
+                log('Simulating cough symptoms - face redness', 'info');
+            }
+        }
+        
+        function performHeadache() {
+            // Forehead blinks red
+            addHeadBlinkEffect(0xff4444, 500); // Red blinking
+            log('Simulating headache - forehead pain indication', 'info');
+        }
+        
+        function performFever() {
+            // Face turns red gradually
+            addFaceColorEffect(0xff6666, 4000);
+            log('Simulating fever - elevated temperature indication', 'info');
+        }
+        
+        function performStomach() {
+            // Stomach area blinks yellow/green
+            addBodyColorEffect(0xffff66, 600, 'stomach');
+            log('Simulating stomach pain - abdominal discomfort', 'info');
+        }
+        
+        function performChest() {
+            // Chest area blinks red
+            addBodyColorEffect(0xff4444, 500, 'chest');
+            log('Simulating chest pain - cardiac symptoms', 'info');
+        }
+        
+        function performItch() {
+            if (mixer && clipsByName['itch']) {
+                playAnimation('itch');
+            } else {
+                log('Simulating itching behavior', 'info');
+                // Could add hand-to-body movement here
+            }
+        }
+        
+        function performLeg() {
+            if (mixer && (clipsByName['walk'] || clipsByName['run'])) {
+                playAnimation(clipsByName['walk'] ? 'walk' : 'run');
+            } else {
+                log('Simulating leg movement', 'info');
+            }
+        }
+        
+        function performDizzy() {
+            // Head rotation effect
+            addDizzyEffect();
+            log('Simulating dizziness - disorientation', 'info');
+        }
+        
+        function performSneeze() {
+            if (mixer && clipsByName['sneeze']) {
+                playAnimation('sneeze');
+            } else {
+                log('Simulating sneeze motion', 'info');
+                // Quick head movement
+            }
+        }
+        
+        function performNausea() {
+            // Green face effect
+            addFaceColorEffect(0x99ff99, 3000);
+            log('Simulating nausea - feeling sick', 'info');
+        }
+        
+        function performBleeding() {
+            // Red particle effect
+            addBloodEffect();
+            log('Simulating bleeding - blood droplets', 'info');
+        }
+        
+        // Animation helpers
+        function playAnimation(animationName) {
+            if (!mixer || !clipsByName[animationName]) {
+                log(`Animation '${animationName}' not found`, 'warning');
+                return;
+            }
+            
+            // Stop current animations
+            mixer.stopAllAction();
+            
+            // Play new animation
+            const action = mixer.clipAction(clipsByName[animationName]);
+            action.reset();
+            action.play();
+            
+            log(`Playing animation: ${animationName}`, 'success');
+        }
+        
+        // Visual effect functions
+        function addFaceColorEffect(color, duration) {
+            if (!currentModel) return;
+            
+            currentModel.traverse((object) => {
+                if (object.isMesh && object.material) {
+                    // Look for head/face materials
+                    if (object.parent && object.parent.name && object.parent.name.toLowerCase().includes('head')) {
+                        const originalColor = object.material.color.clone();
+                        object.material.color.setHex(color);
+                        
+                        setTimeout(() => {
+                            object.material.color.copy(originalColor);
+                        }, duration);
+                    }
+                }
+            });
+        }
+        
+        function addBodyColorEffect(color, blinkInterval, bodyPart) {
+            if (!currentModel) return;
+            
+            let blinkCount = 0;
+            const maxBlinks = 10;
+            
+            const blinkEffect = setInterval(() => {
+                currentModel.traverse((object) => {
+                    if (object.isMesh && object.material) {
+                        const isTargetPart = bodyPart === 'chest' ? 
+                            object.position.y > 1.0 : 
+                            object.position.y < 1.0;
+                        
+                        if (isTargetPart) {
+                            if (blinkCount % 2 === 0) {
+                                object.material.color.setHex(color);
+                            } else {
+                                // Reset to original color
+                                const original = originalMaterials.find(om => om.mesh === object);
+                                if (original) {
+                                    object.material.color.copy(original.material.color);
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                blinkCount++;
+                if (blinkCount >= maxBlinks) {
+                    clearInterval(blinkEffect);
+                    resetEffects();
+                }
+            }, blinkInterval);
+        }
+        
+        function addHeadBlinkEffect(color, interval) {
+            addBodyColorEffect(color, interval, 'head');
+        }
+        
+        function addDizzyEffect() {
+            if (!currentModel) return;
+            
+            let rotation = 0;
+            const dizzyInterval = setInterval(() => {
+                rotation += 0.1;
+                currentModel.rotation.y = Math.sin(rotation) * 0.2;
+                
+                if (rotation > Math.PI * 4) {
+                    clearInterval(dizzyInterval);
+                    currentModel.rotation.y = 0;
+                }
+            }, 50);
+        }
+        
+        function addBloodEffect() {
+            // Simple particle system for blood drops
+            const geometry = new THREE.SphereGeometry(0.01, 8, 8);
+            const material = new THREE.MeshBasicMaterial({ color: 0xaa0000 });
+            
+            for (let i = 0; i < 10; i++) {
+                const drop = new THREE.Mesh(geometry, material);
+                drop.position.set(
+                    (Math.random() - 0.5) * 2,
+                    1.5 + Math.random(),
+                    (Math.random() - 0.5) * 2
+                );
+                scene.add(drop);
+                
+                // Animate falling
+                const fallEffect = () => {
+                    drop.position.y -= 0.02;
+                    if (drop.position.y > 0) {
+                        requestAnimationFrame(fallEffect);
+                    } else {
+                        scene.remove(drop);
+                    }
+                };
+                fallEffect();
+            }
+        }
+        
+        function updateEffects(deltaTime) {
+            // Update any ongoing visual effects
+        }
+        
+        function resetEffects() {
+            if (!currentModel) return;
+            
+            // Reset all materials to original colors
+            originalMaterials.forEach(({ mesh, material }) => {
+                if (mesh.material && material.color) {
+                    mesh.material.color.copy(material.color);
+                }
+            });
+            
+            // Reset rotations
+            currentModel.rotation.set(0, 0, 0);
+        }
+        
+        // Initialize everything
+        initThree();
+        log('Medical Patient Simulator ready - Select a 3D model to begin', 'success');
+    </script>
+</body>
+</html>

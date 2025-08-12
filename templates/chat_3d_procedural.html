@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Patient (Procedural)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; overflow: hidden; }
+    .main-container { display: flex; height: 100vh; width: 100vw; }
+    .main-container.with-controls { display: grid; grid-template-columns: 360px 1fr 50%; column-gap: 12px; }
+    .control-panel { grid-column: 1; width: 360px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 20px; overflow-y: auto; position: relative; display: none; }
+    .control-section { margin-bottom: 25px; }
+    .control-section h3 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .action-btn { padding: 12px 8px; border: none; border-radius: 8px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3); }
+    .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(76,175,80,0.4); }
+    .action-btn:active { transform: translateY(1px); background: linear-gradient(45deg, #45a049, #4CAF50); }
+    .clear-btn { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+    
+    /* Menu Styles */
+    .menu-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .menu-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .menu-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        min-width: 250px;
+        z-index: 1000;
+        display: none;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    
+    .menu-dropdown.show {
+        display: block;
+    }
+    
+    .menu-item {
+        padding: 12px 20px;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #f0f0f0;
+        color: #333;
+        font-size: 0.95em;
+    }
+    
+    .menu-item:hover {
+        background: #f8f9fa;
+        color: #3498db;
+    }
+    
+    .menu-item:last-child {
+        border-bottom: none;
+    }
+    
+    .menu-container {
+        position: relative;
+    }
+    .log-container { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8em; height: 200px; overflow-y: auto; border: 2px solid #333; }
+    .log-entry { margin-bottom: 5px; padding: 2px 0; }
+    .log-entry.success { color: #00ff00; }
+    .log-entry.error { color: #ff4444; }
+    .log-entry.info { color: #44aaff; }
+    /* Chat Panel - 65% width */
+    .chat-panel { 
+      width: 65%; 
+      background: rgba(255, 255, 255, 0.95); 
+      backdrop-filter: blur(10px); 
+      display: flex; 
+      flex-direction: column; 
+      padding: 20px; 
+    }
+    .with-controls .chat-panel { grid-column: 3; width: auto; }
+    
+    /* Character Panel - 35% width */
+    .character-panel { 
+      width: 35%; 
+      position: relative; 
+      overflow: hidden; 
+      background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%); 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .with-controls .character-panel { grid-column: 2; width: auto; }
+    /* Better Chat Interface from 2D version */
+    .patient-header {
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    
+    .patient-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      justify-content: flex-start;
+      max-width: 900px;
+    }
+    
+    .patient-info h2 { margin: 0; font-size: 1.3em; }
+    .patient-info p { margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em; }
+    
+    .patient-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #3498db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      min-height: 300px;
+      transition: max-height 0.3s ease;
+    }
+    
+    /* Dynamic height based on MCQ visibility */
+    .messages.full-height {
+      max-height: calc(100vh - 350px); /* Full available height minus header/input */
+    }
+    
+    .messages.compact-height {
+      max-height: 300px; /* Compact when MCQ is visible */
+    }
+    
+    .message {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    
+    .message.doctor { flex-direction: row-reverse; }
+    
+    .message-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .welcome-message {
+      background: #e8f4fd;
+      border: 1px solid #bee5eb;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 14px;
+      color: #0c5460;
+      font-size: 80%;
+      line-height: 1.5;
+    }
+    
+    .patient-summary {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+    
+    .patient-summary h4 {
+      margin: 0 0 10px 0;
+      color: #495057;
+    }
+    
+    .patient-summary .trait {
+      display: inline-block;
+      background: #e9ecef;
+      padding: 4px 8px;
+      border-radius: 12px;
+      margin: 2px;
+      font-size: 0.8em;
+    }
+    
+    .suggestion-bubbles {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      padding: 0 40px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary {
+      background: #555;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #333;
+    }
+    
+    .btn-primary {
+      background: #27ae60;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #229954;
+    }
+    
+    .doctor .message-avatar { background: #27ae60; }
+    .patient .message-avatar { background: #e74c3c; }
+    
+    .message-content {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 15px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .message-content .text {
+      width: 100%;
+      font-size: 90%;
+    }
+    
+    .doctor .message-content {
+      background: #27ae60;
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+    
+    .patient .message-content {
+      background: #ecf0f1;
+      color: #2c3e50;
+      border-bottom-left-radius: 5px;
+    }
+    
+    .message-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .detected-actions {
+      font-size: 0.8em;
+      color: #7f8c8d;
+      margin-top: 5px;
+      font-style: italic;
+      width: 100%;
+      text-align: left;
+    }
+    
+    /* Audio button styling */
+    .audio-btn {
+      background: none;
+      border: none;
+      font-size: 0.9em;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      opacity: 0.8;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(52, 152, 219, 0.1);
+      color: #3498db;
+      border: 1px solid rgba(52, 152, 219, 0.3);
+    }
+    
+    .audio-btn:hover {
+      opacity: 1;
+      background: rgba(0,0,0,0.1);
+    }
+    
+    .audio-btn.loading {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .audio-btn.success {
+      color: #27ae60;
+    }
+    
+    .audio-btn.error {
+      color: #e74c3c;
+    }
+    
+    .input-area {
+      display: flex;
+      gap: 10px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .message-input {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #bdc3c7;
+      border-radius: 20px;
+      font-size: 0.7em;
+      outline: none;
+    }
+    
+    .message-input:focus { border-color: #3498db; }
+    
+    .send-btn {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    
+    .send-btn:hover { background: linear-gradient(135deg, #2980b9, #21618c); }
+    
+    .typing-indicator {
+      display: none;
+      color: #7f8c8d;
+      font-style: italic;
+      margin: 0px 0;
+      padding: 20px;
+    }
+    
+    /* MCQ Section Styles */
+    .mcq-section {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 0;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
+      opacity: 0;
+    }
+    
+    .mcq-section.show {
+      max-height: 400px;
+      overflow-y: auto;
+      opacity: 1;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    
+    .mcq-section.hide {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      padding: 0 15px;
+      margin-top: 0;
+      display: none; /* Start completely hidden */
+    }
+    
+    .mcq-section {
+      margin: 0 40px;
+    }
+    
+    .patient-details-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .patient-details-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .patient-details-section h3 {
+      margin: 0 0 15px 0;
+      color: #2c3e50;
+      font-size: 1.3em;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 8px;
+    }
+    
+    .patient-details-section p {
+      margin: 8px 0;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    
+    .patient-details-section .trait {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 6px 12px;
+      border-radius: 15px;
+      margin: 4px;
+      font-size: 0.9em;
+      font-weight: 500;
+      border: 1px solid #bbdefb;
+    }
+    
+    .patient-details-section .symptom-tag {
+      display: inline-block;
+      background: #fff3e0;
+      color: #f57c00;
+      padding: 6px 12px;
+      border-radius: 15px;
+      margin: 4px;
+      font-size: 0.9em;
+      font-weight: 500;
+      border: 1px solid #ffe0b2;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(5px);
+      overflow-y: auto;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .modal-content {
+      background: white;
+      margin: 5% auto;
+      padding: 0;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 90vh;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.3s ease-out;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      padding: 25px 30px;
+      border-radius: 15px 15px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.8em;
+      font-weight: 600;
+    }
+    
+    .close {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+    
+    .close:hover {
+      opacity: 1;
+    }
+    
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding: 30px;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    /* Feedback Modal Styles */
+    .feedback-question {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .feedback-question h3 {
+      color: #495057;
+      margin: 0 0 20px 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .likert-scale {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    
+    .likert-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      flex: 1;
+    }
+    
+    .likert-option input[type="radio"] {
+      display: none;
+    }
+    
+    .likert-option label {
+      background: white;
+      border: 2px solid #dee2e6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      color: #6c757d;
+      font-size: 1.1rem;
+    }
+    
+    .likert-option input[type="radio"]:checked + label {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: #667eea;
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .likert-option:hover label {
+      border-color: #667eea;
+      transform: scale(1.05);
+    }
+    
+    .likert-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .text-input {
+      width: 100%;
+      padding: 18px;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 120px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .text-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 35px;
+    }
+    
+    .modal-btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      min-width: 120px;
+    }
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    .cancel-btn {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .cancel-btn:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+    }
+    .mcq-section h3 {
+      margin: 0 0 15px 0;
+      color: #856404;
+    }
+    .mcq-question {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .mcq-question h4 {
+      margin: 0 0 10px 0;
+      color: #495057;
+    }
+    .mcq-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mcq-option {
+      padding: 10px;
+      border: 2px solid #e9ecef;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .mcq-option:hover {
+      border-color: #3498db;
+      background: #f8f9fa;
+    }
+    .mcq-option.selected {
+      border-color: #3498db;
+      background: #e3f2fd;
+    }
+    .mcq-option.correct {
+      border-color: #27ae60;
+      background: #d4edda;
+    }
+    .mcq-option.incorrect {
+      border-color: #e74c3c;
+      background: #f8d7da;
+    }
+    .mcq-explanation {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 5px;
+      font-size: 0.9em;
+      display: none;
+    }
+    .mcq-explanation.show {
+      display: block;
+    }
+    .mcq-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    /* Suggestion Bubbles */
+    .suggestion-bubbles {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2980b9, #21618c);
+    }
+    /* Character Panel Styling */
+    .action-status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      z-index: 10;
+    }
+    
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary {
+      background: #555;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #333;
+    }
+    
+    .emoji-display { 
+      position: absolute; 
+      top: 15%; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      font-size: 2em; 
+      z-index: 100; 
+      pointer-events: none; 
+    }
+    
+    @keyframes bounce { 
+      0% { transform: translateX(-50%) translateY(0px); } 
+      100% { transform: translateX(-50%) translateY(-10px); } 
+    }
+    
+    .canvas-pane { position: relative; width: 100%; height: 100%; }
+    #threeContainer { position: absolute; inset: 0; width: 100%; height: 100%; }
+    canvas { display: block; }
+    .status-display { position: absolute; top: 70px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 12px 14px; border-radius: 10px; font-size: 1.0em; font-weight: bold; min-width: 200px; text-align: center; }
+    .badge { position: absolute; top: 120px; left: 20px; background: rgba(255,255,255,0.85); color: #333; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; }
+
+    /* Feedback Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(5px);
+      overflow-y: auto;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .modal-content {
+      background: white;
+      margin: 20px auto;
+      padding: 0;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.3s ease-out;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      color: white;
+      padding: 25px 30px;
+      border-radius: 15px 15px 0 0;
+      text-align: center;
+      position: relative;
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    
+    .modal-body {
+      padding: 30px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    
+    .close:hover {
+      color: #ecf0f1;
+    }
+    
+    .feedback-question {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .feedback-question h3 {
+      color: #495057;
+      margin: 0 0 20px 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .likert-scale {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    
+    .likert-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      flex: 1;
+    }
+    
+    .likert-option input[type="radio"] {
+      display: none;
+    }
+    
+    .likert-option label {
+      background: white;
+      border: 2px solid #dee2e6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      color: #6c757d;
+      font-size: 1.1rem;
+    }
+    
+    .likert-option input[type="radio"]:checked + label {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: #667eea;
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .likert-option:hover label {
+      border-color: #667eea;
+      transform: scale(1.05);
+    }
+    
+    .likert-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .text-input {
+      width: 100%;
+      padding: 18px;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 120px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .text-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 35px;
+    }
+    
+    .modal-btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      min-width: 120px;
+    }
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    .cancel-btn {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .cancel-btn:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+    }
+    
+    .consultation-end {
+      text-align: center;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border: 2px solid #27ae60;
+    }
+    
+    .end-options {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    
+    .end-options .btn {
+      padding: 12px 24px;
+      font-size: 1em;
+    }
+    
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      .modal {
+        padding: 10px;
+      }
+      
+      .modal-content {
+        margin: 10px auto;
+        max-height: 95vh;
+      }
+      
+      .modal-header {
+        padding: 20px 20px;
+      }
+      
+      .modal-header h2 {
+        font-size: 1.5em;
+      }
+      
+      .modal-body {
+        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      
+      .likert-scale {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+      
+      .likert-labels {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+      }
+      
+      .menu-dropdown {
+        right: -50px;
+        min-width: 200px;
+      }
+    }
+
+
+    
+    /* Control Panel Responsive Styles */
+    @media (max-width: 768px) {
+      .main-container.with-controls {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+      }
+      
+      .control-panel {
+        grid-row: 1;
+        width: 100%;
+        max-height: 300px;
+      }
+      
+      .character-panel {
+        grid-row: 2;
+        height: 300px;
+      }
+      
+      .chat-panel {
+        grid-row: 3;
+        width: 100%;
+      }
+    }
+    
+    /* Patient Details Modal Styles */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1000; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+      backdrop-filter: blur(5px); /* Blur background */
+      overflow-y: auto; /* Enable scroll if needed */
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto; /* 5% from the top and centered */
+      padding: 0;
+      border: none;
+      border-radius: 15px;
+      width: 90%; /* Responsive width */
+      max-width: 600px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.3s ease-out;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 15px 15px 0 0;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5em;
+      font-weight: 600;
+    }
+
+    .close {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .close:hover,
+    .close:focus {
+      opacity: 0.7;
+    }
+
+    .modal-body {
+      padding: 25px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .patient-details-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .patient-details-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .patient-details-section h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 8px;
+    }
+
+    .patient-details-section p {
+      margin-bottom: 12px;
+      line-height: 1.6;
+      color: #495057;
+    }
+
+    .patient-details-section strong {
+      color: #2c3e50;
+      font-weight: 600;
+    }
+
+    .trait {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 6px 12px;
+      margin: 4px 6px 4px 0;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .symptom-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      padding: 6px 12px;
+      margin: 4px 6px 4px 0;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Consultation End Styling */
+    .consultation-end {
+      text-align: center;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      margin-top: 20px;
+      border: 2px solid #28a745;
+    }
+    
+    .end-options {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    
+    .end-options .btn {
+      padding: 12px 24px;
+      font-size: 1em;
+      font-weight: bold;
+    }
+    
+    /* Responsive design for mobile */
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        margin: 10% auto;
+      }
+      
+      .modal-header {
+        padding: 15px;
+      }
+      
+      .modal-header h2 {
+        font-size: 1.3em;
+      }
+      
+      .modal-body {
+        padding: 20px;
+      }
+      
+      .patient-details-section {
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .trait, .symptom-tag {
+        padding: 5px 10px;
+        font-size: 0.8em;
+        margin: 3px 5px 3px 0;
+      }
+      
+      .end-options {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .menu-dropdown {
+        right: -50px;
+        min-width: 200px;
+      }
+    }
+  </style>
+  <script src="/static/vendor/three/three.min.js"></script>
+  <script src="/static/vendor/three/OrbitControls.js"></script>
+</head>
+<body>
+  <div class="main-container">
+    <div class="control-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">🎭 Character Actions</h3>
+        <button class="close" onclick="toggleManualControls()" style="background: none; border: none; color: #333; font-size: 24px; cursor: pointer; padding: 5px;">&times;</button>
+      </div>
+      <div class="control-section">
+        <div class="action-grid">
+          <button class="action-btn" onclick="performAction('wave')">👋 Wave</button>
+          <button class="action-btn" onclick="performAction('cough')">😷 Cough</button>
+          <button class="action-btn" onclick="performAction('headache')">🤕 Headache</button>
+          <button class="action-btn" onclick="performAction('itch')">🤏 Itch</button>
+          <button class="action-btn" onclick="performAction('fever')">🤒 Fever</button>
+                          <button class="action-btn" onclick="performAction('stomach')">🫃 Stomach</button>
+          <button class="action-btn" onclick="performAction('leg')">🦵 Leg</button>
+          <button class="action-btn" onclick="performAction('dizzy')">😵 Dizzy</button>
+          <button class="action-btn" onclick="performAction('sneeze')">🤧 Sneeze</button>
+          <button class="action-btn" onclick="performAction('nausea')">🤢 Nausea</button>
+          <button class="action-btn" onclick="performAction('blood')">🩸 Blood</button>
+          <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
+        </div>
+      </div>
+      <div class="control-section">
+        <h3>📝 Action Log</h3>
+        <div class="log-container" id="actionLog">
+          <div class="log-entry info">[SYSTEM] 3D scene initializing…</div>
+        </div>
+        <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+      </div>
+    </div>
+    <div class="character-panel">
+      <div class="canvas-pane">
+        <div class="action-status" id="actionStatus">Ready - No active actions</div>
+        <div class="status-display" id="statusDisplay">Building 3D figure…</div>
+        <div class="badge">Left mouse: rotate • Right mouse: pan • Wheel: zoom</div>
+        <div class="emoji-display" id="actionEmoji" style="display: none;"></div>
+        <div id="threeContainer"></div>
+      </div>
+      
+      <div class="controls">
+        <!-- Menu moved to patient header -->
+      </div>
+    </div>
+    
+    <div class="chat-panel">
+      <div class="patient-header">
+        <div class="patient-info">
+          <div class="patient-avatar">
+            {{ patient_data.name[0] }}
+          </div>
+          <div class="patient-details">
+            <h2>{{ patient_data.name }}</h2>
+            <p>{{ patient_data.age }} years old • {{ patient_data.gender }} • {{ patient_data.occupation }}</p>
+          </div>
+        </div>
+        <div class="menu-container">
+          <button class="menu-btn" onclick="toggleMenu()">
+            ☰ Menu
+          </button>
+          <div class="menu-dropdown" id="menuDropdown">
+            <button class="menu-item" onclick="toggleManualControls()">🖱️ Double Click</button>
+            <button class="menu-item" onclick="newPatient()">🆕 New Patient</button>
+            <button class="menu-item" onclick="goHome()">🏠 Home</button>
+            <button class="menu-item" onclick="generateMCQ()">📝 Generate MCQ</button>
+            <button class="menu-item" onclick="openFeedbackModal()">📝 Give Feedback</button>
+            <button class="menu-item" onclick="window.location.href='/disease_list'">🏥 Disease List</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="messages full-height" id="messages">
+        <div class="welcome-message">
+          <strong>Clinical Scenario:</strong> {{ patient_data.name }} has come to see you with concerning symptoms. Begin your consultation by greeting the patient and taking a thorough history.If AI doesn't respond, try again after 30 sec.<br>
+          <strong>Click:</strong> "Helpful Details" at the end and submit a feedback form please.
+        </div>
+      </div>
+      
+      <div class="typing-indicator" id="typing">
+        {{ patient_data.name }} is typing...
+      </div>
+      
+      <!-- Suggestion Bubbles -->
+      <div class="suggestion-bubbles">
+        <button class="btn btn-secondary" onclick="showHint()">💡Hint</button>
+        <button class="btn btn-secondary" onclick="showPatientDetailsModal()">📋 Helpful Details</button>
+        <button class="btn btn-secondary" onclick="showDiagnosisModal()">🩺 Give Diagnosis</button>
+      </div>
+      
+      <div class="input-area">
+        <input type="text" class="message-input" id="messageInput" 
+               placeholder="Type your question to the patient..." 
+               onkeypress="handleKeyPress(event)">
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
+      
+      <!-- MCQ Section - Separate from chat flow -->
+      <div class="mcq-section hide" id="mcqSection">
+        <h3>📝 Multiple Choice Questions</h3>
+        <div id="mcqQuestions"></div>
+        <div class="mcq-buttons">
+          <button class="btn btn-primary" onclick="checkAnswers()">Check Answers</button>
+          <button class="btn btn-secondary" onclick="hideMCQ()">Hide MCQ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Details Modal -->
+  <div id="patientDetailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Patient Details</h2>
+        <button class="btn btn-primary" onclick="openFeedbackModal()" style="background: linear-gradient(135deg, #27ae60, #229954); padding: 8px 16px; font-size: 0.9em; margin-right: 20px;">
+          📝 Feedback
+        </button>
+        <span class="close" onclick="closePatientDetailsModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        Note: If there is no reply from AI please wait 30 sec and then send a message again. If it still doesn't work generate a new Chat or tell us about it through the feedback form.
+                    <p>For All diseases check the <a href="/disease_list">Disease list</a></p>
+        <div class="patient-details-section">
+          <h3>Patient Background Information</h3>
+          <p><strong>Personality Type:</strong> {{ patient_data.personality_type }}</p>
+          <p><strong>Communication Style:</strong> {{ patient_data.communication_style }}</p>
+          <div>
+            <strong>Key Traits:</strong>
+            {% for trait in patient_data.personality_traits.split(',') %}
+              <span class="trait">{{ trait.strip() }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="patient-details-section">
+          <h3>Diagnostic Information</h3>
+          <p><strong>Condition:</strong> {{ patient_data.condition_name }}</p>
+          <div>
+            <strong>Symptoms:</strong>
+            {% for symptom in patient_data.symptoms %}
+              <span class="symptom-tag">{{ symptom }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnosis Modal -->
+  <div id="diagnosisModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px 40px; border-radius:12px; box-shadow:0 2px 16px rgba(0,0,0,0.2); min-width:320px; max-width:90vw;">
+      <h3>Enter Your Diagnosis</h3>
+      <input type="text" id="diagnosisInput" style="width:100%; padding:10px; margin:15px 0; font-size:1em; border-radius:6px; border:1px solid #ccc;" onkeypress="handleDiagnosisKeyPress(event)">
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn btn-primary" style="background: #27ae60; color: white;" onclick="submitDiagnosis()">Submit</button>
+        <button class="btn btn-secondary" style="background: #555; color: white;" onclick="hideDiagnosisModal()">Cancel</button>
+      </div>
+      <div id="diagnosisResult" style="margin-top:10px; color:#e74c3c; display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    const patientName = '{{ patient_data.name }}';
+    let currentAction = null;
+    let actionTimeout = null;
+    let lastProcessedActions = [];
+    
+    // Constants for the new system
+    const ACTION_DURATION = 3000; // 3 seconds per action
+    const INTER_ACTION_DELAY = 500; // 1.5s between different actions  
+    const CYCLE_DELAY = 500; // 2 seconds between cycles
+    
+    function log(msg, type='info'){ const el=document.getElementById('actionLog'); const t=new Date().toLocaleTimeString(); const d=document.createElement('div'); d.className=`log-entry ${type}`; d.textContent=`[${t}] ${msg}`; el.appendChild(d); el.scrollTop=el.scrollHeight; console[type==='error'?'error':'log'](`${type.toUpperCase()}: ${msg}`); }
+    function clearLog(){ document.getElementById('actionLog').innerHTML='<div class="log-entry info">[SYSTEM] Log cleared</div>'; }
+    function updateStatus(s){ const el=document.getElementById('statusDisplay'); if(el) el.textContent=s; log(`Status: ${s}`,'info'); }
+
+    // Dynamic loader to ensure THREE/controls are available
+    function loadScript(url){
+      return new Promise((resolve,reject)=>{ const s=document.createElement('script'); s.src=url; s.async=true; s.onload=()=>resolve(); s.onerror=()=>reject(new Error('Failed: '+url)); document.head.appendChild(s); });
+    }
+    async function ensureThree(){
+      if(window.THREE) return;
+      // Load local Three.js files
+      try {
+        await loadScript('/static/vendor/three/three.min.js');
+        if(!window.THREE) throw new Error('three.js could not be loaded from local files');
+        
+        if(!THREE.OrbitControls){
+          await loadScript('/static/vendor/three/OrbitControls.js');
+        }
+      } catch(e) {
+        // Fallback to CDN if local files fail
+        const threeUrls=[
+          'https://unpkg.com/three@0.160.0/build/three.min.js',
+          'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js'
+        ];
+        let lastErr=null;
+        for(const u of threeUrls){ try{ await loadScript(u); if(window.THREE) break; } catch(e){ lastErr=e; } }
+        if(!window.THREE) throw lastErr || new Error('three.js could not be loaded');
+        
+        if(!THREE.OrbitControls){
+          const ctrlUrls=[
+            'https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js',
+            'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js'
+          ];
+          for(const u of ctrlUrls){ try{ await loadScript(u); if(THREE.OrbitControls) break; } catch(_){} }
+        }
+      }
+    }
+
+    // Three.js core
+    let scene, camera, renderer, controls, clock;
+    const container=document.getElementById('threeContainer');
+    function initThree(){
+      scene=new THREE.Scene(); scene.background=new THREE.Color(0xbfd9ff);
+      camera=new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 100); camera.position.set(0,2.0,6);
+      renderer=new THREE.WebGLRenderer({antialias:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      renderer.setSize(container.clientWidth,container.clientHeight);
+      renderer.shadowMap.enabled=true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.physicallyCorrectLights = true;
+      container.appendChild(renderer.domElement);
+      const hemi=new THREE.HemisphereLight(0xffffff,0x444444,1.0); hemi.position.set(0,2,0); scene.add(hemi);
+      const dir=new THREE.DirectionalLight(0xffffff,1.0); dir.position.set(3,5,2); dir.castShadow=true; scene.add(dir);
+      const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0xd3f2d3,roughness:1})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+      try{
+        if(THREE.OrbitControls){ controls=new THREE.OrbitControls(camera, renderer.domElement); controls.target.set(0,1.2,0); controls.update(); }  // Adjusted target for lowered head
+        else { log('OrbitControls not available; using fixed camera','info'); }
+      }catch(e){ log('OrbitControls init failed: '+e.message,'error'); }
+      clock=new THREE.Clock();
+      window.addEventListener('resize', onResize);
+      if (window.ResizeObserver){ const ro=new ResizeObserver(()=>onResize()); ro.observe(container); }
+      animate();
+    }
+    function onResize(){ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+    function animate(){ requestAnimationFrame(animate); const dt=clock.getDelta(); updateRig(dt); updateEffects(dt); renderer.render(scene,camera); }
+
+    // Procedural character rig
+    let rig={};
+    let activeEffects=[];
+    function buildCharacter(){
+      const bodyMat=new THREE.MeshStandardMaterial({ color:0x4a90e2, metalness:0.1, roughness:0.85 });
+      const skinMat=new THREE.MeshStandardMaterial({ color:0xffdbac, metalness:0.0, roughness:0.9 });
+      const hairMat=new THREE.MeshStandardMaterial({ color:0x3b2e2a, metalness:0.0, roughness:1.0 });
+
+      const root=new THREE.Group(); root.position.set(0,0,0); scene.add(root);
+      const pelvis=new THREE.Group(); pelvis.position.set(0,0.9,0); root.add(pelvis);
+      const torso=new THREE.Mesh(new THREE.CapsuleGeometry(0.22,0.55,8,16), bodyMat); torso.castShadow=true; torso.receiveShadow=true; torso.position.set(0,0.4,0); pelvis.add(torso);
+      const chest=new THREE.Group(); chest.position.set(0,0.5,0); torso.add(chest);
+      const neck=new THREE.Group(); neck.position.set(0,0.1,0); chest.add(neck);  // Lowered from 0.15 to 0.1 (closer to body)
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24), skinMat); head.castShadow=true; head.position.set(0,0.15,0); neck.add(head);  // Lowered from 0.2 to 0.15
+      const hair=new THREE.Mesh(new THREE.SphereGeometry(0.29,24,24,0,Math.PI*2,0,Math.PI/2), hairMat); hair.position.copy(head.position).add(new THREE.Vector3(0,0.02,0)); neck.add(hair);
+
+      // Eyes (adjusted for lowered head position)
+      const eyeMat=new THREE.MeshStandardMaterial({ color:0xffffff });
+      const pupilMat=new THREE.MeshStandardMaterial({ color:0x000000 });
+      const eyeL=new THREE.Mesh(new THREE.SphereGeometry(0.04,16,16), eyeMat); eyeL.position.set(-0.09,0.15,0.22);  // Adjusted Y from 0.2 to 0.15
+      const eyeR=new THREE.Mesh(new THREE.SphereGeometry(0.04,16,16), eyeMat); eyeR.position.set(0.09,0.15,0.22);   // Adjusted Y from 0.2 to 0.15
+      const pupilL=new THREE.Mesh(new THREE.SphereGeometry(0.015,12,12), pupilMat); pupilL.position.set(-0.09,0.14,0.26); // Adjusted Y from 0.19 to 0.14
+      const pupilR=new THREE.Mesh(new THREE.SphereGeometry(0.015,12,12), pupilMat); pupilR.position.set(0.09,0.14,0.26);  // Adjusted Y from 0.19 to 0.14
+      neck.add(eyeL, eyeR, pupilL, pupilR);
+
+      // Arms (shoulder groups for rotation) - raised 1 time higher
+      const shoulderL=new THREE.Group(); shoulderL.position.set(-0.28,-0.15,0); chest.add(shoulderL);  // Raised from -0.25 to -0.15 (1 time higher = +0.10)
+      const upperArmL=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.36,16), skinMat); upperArmL.position.set(0,-0.18,0); upperArmL.castShadow=true; shoulderL.add(upperArmL);
+      const forearmL=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.32,16), skinMat); forearmL.position.set(0,-0.34,0); upperArmL.add(forearmL);
+      const handL=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.08), skinMat); handL.position.set(0,-0.19,0); forearmL.add(handL);
+
+      const shoulderR=new THREE.Group(); shoulderR.position.set(0.28,-0.15,0); chest.add(shoulderR);   // Raised from -0.25 to -0.15 (1 time higher = +0.10)
+      const upperArmR=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.36,16), skinMat); upperArmR.position.set(0,-0.18,0); upperArmR.castShadow=true; shoulderR.add(upperArmR);
+      const forearmR=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.32,16), skinMat); forearmR.position.set(0,-0.34,0); upperArmR.add(forearmR);
+      const handR=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.08), skinMat); handR.position.set(0,-0.19,0); forearmR.add(handR);
+
+      // Legs
+      const hipL=new THREE.Group(); hipL.position.set(-0.12,0.0,0); pelvis.add(hipL);
+      const thighL=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.5,16), bodyMat); thighL.position.set(0,-0.25,0); hipL.add(thighL);
+      const shinL=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.52,16), bodyMat); shinL.position.set(0,-0.38,0); thighL.add(shinL);
+      const footL=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.06,0.24), new THREE.MeshStandardMaterial({color:0x654321})); footL.position.set(0,-0.31,0.08); shinL.add(footL);
+
+      const hipR=new THREE.Group(); hipR.position.set(0.12,0.0,0); pelvis.add(hipR);
+      const thighR=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.5,16), bodyMat); thighR.position.set(0,-0.25,0); hipR.add(thighR);
+      const shinR=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.52,16), bodyMat); shinR.position.set(0,-0.38,0); thighR.add(shinR);
+      const footR=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.06,0.24), new THREE.MeshStandardMaterial({color:0x654321})); footR.position.set(0,-0.31,0.08); shinR.add(footR);
+
+      rig={ root, pelvis, torso, chest, neck, head, hair,
+            shoulderL, upperArmL, forearmL, handL,
+            shoulderR, upperArmR, forearmR, handR,
+            hipL, thighL, shinL, footL,
+            hipR, thighR, shinR, footR,
+            mats:{ bodyMat, skinMat, hairMat } };
+
+      updateStatus('Ready for action testing');
+    }
+
+    // Effects helpers
+    function generateCircleTexture(){ const s=128,c=document.createElement('canvas'); c.width=c.height=s; const x=c.getContext('2d'); const g=x.createRadialGradient(s/2,s/2,s*0.1,s/2,s/2,s*0.5); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,s,s); const t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t; }
+    function generateStarTexture(){ const s=128,c=document.createElement('canvas'); c.width=c.height=s; const x=c.getContext('2d'); x.translate(s/2,s/2); x.rotate(-Math.PI/10); x.fillStyle='rgba(255,215,0,1)'; x.beginPath(); for(let i=0;i<5;i++){ x.lineTo(0,-s*0.45); x.translate(0,-s*0.18); x.rotate(Math.PI/5); x.lineTo(0,s*0.18); x.translate(0,s*0.18); x.rotate(-3*Math.PI/5);} x.fill(); const t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t; }
+
+    function addOrbitingStar(duration=3){ const tex=generateStarTexture(); const mat=new THREE.SpriteMaterial({map:tex,transparent:true}); const spr=new THREE.Sprite(mat); spr.scale.set(0.2,0.2,0.2); scene.add(spr); let t=0; activeEffects.push({ttl:duration, update:(dt)=>{ t+=dt; if(!rig.head) return; const hp=rig.head.getWorldPosition(new THREE.Vector3()); const r=0.35, a=t*2.6; spr.position.set(hp.x+Math.cos(a)*r, hp.y+0.15+Math.sin(a*1.3)*0.05, hp.z+Math.sin(a)*r); }, cleanup:()=>{ scene.remove(spr); mat.dispose(); }}); }
+    function emitParticles({ color=0xffffff, from='mouth', count=25, spread=0.12, gravity=-0.6, speed=0.8, life=1.2 }){
+      const ps=[]; const origin = (()=>{ if(!rig.head) return new THREE.Vector3(0,1.5,0); const p=rig.head.getWorldPosition(new THREE.Vector3()); if(from==='mouth') return p.add(new THREE.Vector3(0, -0.12, 0.2)); if(from==='stomach') { const s=rig.torso.getWorldPosition(new THREE.Vector3()); return s.add(new THREE.Vector3(0, -0.05, 0.15)); } if(from==='rightArm'){ const a=rig.forearmR.getWorldPosition(new THREE.Vector3()); return a.add(new THREE.Vector3(0, -0.15, 0)); } return p; })();
+      for(let i=0;i<count;i++){ const m=new THREE.SpriteMaterial({ color, transparent:true, opacity:1 }); const s=new THREE.Sprite(m); s.scale.set(0.06+Math.random()*0.08, 0.06+Math.random()*0.08, 1); s.position.copy(origin); scene.add(s); const vx=(Math.random()-0.5)*spread*speed, vy=Math.random()*spread*speed*0.6, vz=(Math.random()-0.5)*spread*speed; ps.push({s, vx, vy, vz, life: life*(0.7+Math.random()*0.6)}); }
+      activeEffects.push({ ttl: Math.max(...ps.map(p=>p.life)), update:(dt)=>{ ps.forEach(p=>{ p.vy += gravity*dt*0.25; p.s.position.x += p.vx*dt; p.s.position.y += p.vy*dt; p.s.position.z += p.vz*dt; p.life -= dt; p.s.material.opacity = Math.max(0, Math.min(1, p.life)); }); }, cleanup:()=>{ ps.forEach(p=>{ scene.remove(p.s); p.s.material.dispose(); }); } });
+    }
+
+    function createCoughDroplets(){
+      const ps=[]; const origin = (()=>{ if(!rig.head) return new THREE.Vector3(0,1.5,0); const p=rig.head.getWorldPosition(new THREE.Vector3()); return p.add(new THREE.Vector3(0, -0.18, 0.2)); })();
+      for(let i=0;i<20;i++){ 
+        const geometry = new THREE.SphereGeometry(0.018, 8, 8);  // Smaller water droplets
+        const material = new THREE.MeshBasicMaterial({ 
+          color: 0xccddff,
+          transparent: true,
+          opacity: 0.6
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        
+        // Position droplets near mouth with increased random spread
+        particle.position.set(
+          origin.x + (Math.random() - 0.5) * 0.18,  // Increased horizontal spread
+          origin.y + (Math.random() - 0.5) * 0.08,  // Increased vertical spread  
+          origin.z + Math.random() * 0.08  // Increased forward spread
+        );
+        
+        // Velocity pointing outward from mouth with increased spread
+        const vx = (Math.random() - 0.5) * 0.025;  // Increased horizontal movement
+        const vy = (Math.random() - 0.3) * 0.012;  // Increased vertical movement
+        const vz = Math.random() * 0.025 + 0.012;  // Increased forward movement
+        
+        ps.push({particle, vx, vy, vz, life: 1.2*(0.7+Math.random()*0.6)});
+        scene.add(particle);
+      }
+      
+      activeEffects.push({ 
+        ttl: Math.max(...ps.map(p=>p.life)), 
+        update:(dt)=>{ 
+          ps.forEach(p=>{ 
+            p.vy += -0.6*dt*0.25;  // Gravity
+            p.particle.position.x += p.vx*dt; 
+            p.particle.position.y += p.vy*dt; 
+            p.particle.position.z += p.vz*dt; 
+            p.life -= dt; 
+            p.particle.material.opacity = Math.max(0, Math.min(0.6, p.life)); 
+          }); 
+        }, 
+        cleanup:()=>{ 
+          ps.forEach(p=>{ 
+            scene.remove(p.particle); 
+            p.particle.geometry.dispose(); 
+            p.particle.material.dispose(); 
+          }); 
+        } 
+      });
+    }
+
+    function createSneezeParticles(){
+      const ps=[]; const origin = (()=>{ if(!rig.head) return new THREE.Vector3(0,1.5,0); const p=rig.head.getWorldPosition(new THREE.Vector3()); return p.add(new THREE.Vector3(0, -0.12, 0.2)); })();
+      for(let i=0;i<20;i++){ 
+        const m=new THREE.SpriteMaterial({ color:0x99ccff, transparent:true, opacity:1 });
+        const s=new THREE.Sprite(m);
+        s.scale.set(0.04+Math.random()*0.05, 0.04+Math.random()*0.05, 1);  // Smaller sprites
+        s.position.copy(origin);
+        scene.add(s);
+        const vx=(Math.random()-0.5)*0.3*1.3, vy=Math.random()*0.3*1.3*0.6, vz=(Math.random()-0.5)*0.3*1.3;
+        ps.push({s, vx, vy, vz, life: 1.6*(0.7+Math.random()*0.6)});
+      }
+      
+      activeEffects.push({ 
+        ttl: Math.max(...ps.map(p=>p.life)), 
+        update:(dt)=>{ 
+          ps.forEach(p=>{ 
+            p.vy += -0.8*dt*0.25;  // Gravity
+            p.s.position.x += p.vx*dt; 
+            p.s.position.y += p.vy*dt; 
+            p.s.position.z += p.vz*dt; 
+            p.life -= dt; 
+            p.s.material.opacity = Math.max(0, Math.min(1, p.life)); 
+          }); 
+        }, 
+        cleanup:()=>{ 
+          ps.forEach(p=>{ 
+            scene.remove(p.s); 
+            p.s.material.dispose(); 
+          }); 
+        } 
+      });
+    }
+
+    function blinkOverlay(where='chest', color=0xff6666, duration=3){ const tex=generateCircleTexture(); const mat=new THREE.SpriteMaterial({map:tex,color,transparent:true,opacity:0.9}); const spr=new THREE.Sprite(mat); const pos = (()=>{ if(where==='chest'){ return rig.chest.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,-0.3,0.35)); } if(where==='stomach'){ return rig.torso.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,-0.05,0.35)); } if(where==='rightArm'){ const a=rig.forearmR.getWorldPosition(new THREE.Vector3()); return a.add(new THREE.Vector3(0, -0.15, 0)); } return rig.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,0.05,0.25)); })(); spr.position.copy(pos); spr.scale.set(0.35,0.35,0.35); scene.add(spr); let t=0; activeEffects.push({ ttl:duration, update:(dt)=>{ t+=dt; spr.material.opacity=0.5+0.4*Math.abs(Math.sin(t*6)); }, cleanup:()=>{ scene.remove(spr); mat.dispose(); } }); }
+    function setFeverTint(on){ const redColor=on?0xff6666:null; const tint=on?0x772222:0x000000; const intensity=on?0.6:0.0; if(on){ if(rig.head) rig.head.material.color.setHex(redColor); if(rig.upperArmL) rig.upperArmL.material.color.setHex(redColor); if(rig.upperArmR) rig.upperArmR.material.color.setHex(redColor); if(rig.forearmL) rig.forearmL.material.color.setHex(redColor); if(rig.forearmR) rig.forearmR.material.color.setHex(redColor); } else { if(rig.head) rig.head.material.color.setHex(0xffdbac); if(rig.upperArmL) rig.upperArmL.material.color.setHex(0xffdbac); if(rig.upperArmR) rig.upperArmR.material.color.setHex(0xffdbac); if(rig.forearmL) rig.forearmL.material.color.setHex(0xffdbac); if(rig.forearmR) rig.forearmR.material.color.setHex(0xffdbac); } [rig.head,rig.handL,rig.handR].forEach(mesh=>{ if(!mesh) return; const m=mesh.material; if(m && m.isMeshStandardMaterial){ m.emissive=new THREE.Color(tint); m.emissiveIntensity=intensity; }}); }
+    function blinkHair(duration=3){ if(!rig.hair) return; const originalColor=0x3b2e2a; let t=0; activeEffects.push({ ttl:duration, update:(dt)=>{ t+=dt; const blinkColor=Math.abs(Math.sin(t*4)) > 0.5 ? 0xff0000 : originalColor; rig.hair.material.color.setHex(blinkColor); }, cleanup:()=>{ rig.hair.material.color.setHex(originalColor); } }); }
+    function createItchDots(duration=3){ const dots=[]; const dotPositions=[ {arm:'right',pos:new THREE.Vector3(0.08,0.8,0.2)}, {arm:'right',pos:new THREE.Vector3(0.05,0.6,0.25)}, {arm:'right',pos:new THREE.Vector3(0.12,0.5,0.18)}, {body:'torso',pos:new THREE.Vector3(-0.05,1.2,0.28)}, {body:'torso',pos:new THREE.Vector3(-0.3,1.0,0.3)}, {body:'torso',pos:new THREE.Vector3(0.0,1.4,0.25)} ]; for(let i=0;i<dotPositions.length;i++){ const dotMat=new THREE.SpriteMaterial({color:0xff4444,transparent:true,opacity:0.8}); const dot=new THREE.Sprite(dotMat); dot.scale.set(0.06,0.06,0.06); dot.position.copy(dotPositions[i].pos); scene.add(dot); dots.push(dot); } let t=0; activeEffects.push({ ttl:duration, update:(dt)=>{ t+=dt; dots.forEach((dot,i)=>{ dot.material.opacity=0.4+0.4*Math.abs(Math.sin(t*3+i*0.5)); }); }, cleanup:()=>{ dots.forEach(dot=>{ scene.remove(dot); dot.material.dispose(); }); } }); }
+    function createBodyShiver(duration=3){ let t=0; activeEffects.push({ ttl:duration, update:(dt)=>{ t+=dt; if(rig.root){ rig.root.rotation.z = Math.sin(t*8)*0.02; rig.root.position.x = Math.sin(t*12)*0.008; } }, cleanup:()=>{ if(rig.root){ rig.root.rotation.z=0; rig.root.position.x=0; } } }); }
+    function clearEffects(){ activeEffects.forEach(e=>{ if(e.cleanup) e.cleanup(); }); activeEffects=[]; }
+    function updateEffects(dt){ for(let i=activeEffects.length-1;i>=0;i--){ const e=activeEffects[i]; if(e.update) e.update(dt); e.ttl-=dt; if(e.ttl<=0){ if(e.cleanup) e.cleanup(); activeEffects.splice(i,1); } } }
+
+    // Animation state
+    const anim={ wave:0, waveDir:1, leg:0, legDir:1, headWobble:0, headWobbleDir:1, itch:0, itchDir:1, timers:{} };
+    function updateRig(dt){
+      if(!rig.root) return;
+      // gentle idle breathing
+      rig.chest.position.y = 0.55 + Math.sin(performance.now()*0.002)*0.01;
+
+      // wave (right arm)
+      if(anim.wave>0){ const s=rig.shoulderR; const freq=6; s.rotation.z = Math.sin(performance.now()*0.001*freq)*0.8; }
+      // leg swing (left leg)
+      if(anim.leg>0){ rig.hipL.rotation.x = Math.sin(performance.now()*0.006)*0.5; rig.hipR.rotation.x = -rig.hipL.rotation.x*0.6; }
+      // head wobble (headache/dizzy)
+      if(anim.headWobble>0){ rig.neck.rotation.z = Math.sin(performance.now()*0.009)*0.12; }
+      // itch: right arm up scratching head (corrected direction, brought to forefront)
+      if(anim.itch>0){ rig.shoulderR.rotation.z = -1.2 + Math.sin(performance.now()*0.02)*0.25; rig.forearmR.rotation.x = -0.8; rig.shoulderR.position.z = 0.3; rig.shoulderL.position.z = 0.3; }
+    }
+
+        // Simplified Action Execution System
+    
+    // Constants for action execution
+    const MAX_CYCLES = 3; // Execute each action 3 times
+    
+    // Simplified action execution functions
+    function executeActionsImmediately(actions) {
+      if (!Array.isArray(actions) || actions.length === 0) return;
+      
+      log(`🎭 Executing actions immediately: [${actions.join(', ')}]`, 'info');
+      
+      // Clear any current action
+      clearCurrentAction();
+      
+      // Execute each action 3 times with delays
+      executeActionSequence(actions, 0, 0);
+    }
+    
+    function executeActionSequence(actions, actionIndex, cycleCount) {
+      if (cycleCount >= MAX_CYCLES) {
+        log(`🎭 All cycles completed for actions: [${actions.join(', ')}]`, 'info');
+        updateActionStatus('Ready - Actions completed');
+        return;
+      }
+      
+      if (actionIndex >= actions.length) {
+        // Move to next cycle
+        setTimeout(() => {
+          executeActionSequence(actions, 0, cycleCount + 1);
+        }, CYCLE_DELAY);
+        return;
+      }
+      
+      const actionType = actions[actionIndex];
+      log(`🎭 Executing action: ${actionType} (cycle ${cycleCount + 1}/${MAX_CYCLES})`, 'info');
+      
+      executeSingleAction(actionType);
+      
+      // Schedule next action in sequence with extra gap
+      setTimeout(() => {
+        executeActionSequence(actions, actionIndex + 1, cycleCount);
+      }, ACTION_DURATION + INTER_ACTION_DELAY);
+    }
+    
+    function executeSingleAction(type) {
+      log(`Executing single action: ${type}`, 'info');
+      clearCurrentAction();
+      currentAction = type;
+      updateStatus(`Performing: ${type}`);
+      updateActionStatus(`Performing: ${type}`);
+      
+      // Show emoji above character
+      showActionEmoji(type);
+      
+      // Execute the animation
+      switch(type){
+        case 'wave': anim.wave=1; rig.shoulderR.rotation.x = -0.6; break;
+        case 'leg': anim.leg=1; break;
+        case 'headache': anim.headWobble=1; blinkOverlay('head',0xff6666,ACTION_DURATION/1000); blinkHair(ACTION_DURATION/1000); break;
+        case 'itch': anim.itch=1; createItchDots(ACTION_DURATION/1000); break;
+        case 'fever': setFeverTint(true); createBodyShiver(ACTION_DURATION/1000); thermometerMesh(ACTION_DURATION/1000); break;
+        case 'stomach': blinkOverlay('stomach',0xcc8800,ACTION_DURATION/1000); handsToStomach(); break;
+        case 'chest': blinkOverlay('chest',0xcc0000,ACTION_DURATION/1000); break;
+        case 'dizzy': anim.headWobble=1; addOrbitingStar(ACTION_DURATION/1000); break;
+        case 'cough': headCough(); createCoughDroplets(); break;
+        case 'sneeze': headNod(true); createSneezeParticles(); break;
+        case 'nausea': emitParticles({color:0x3cb371,from:'mouth',count:36,spread:0.25,gravity:-2.2,speed:0.6,life:1.8}); break;
+        case 'blood': emitParticles({color:0x8b0000,from:'rightArm',count:26,spread:0.18,gravity:-2.5,speed:0.5,life:1.4}); emitParticles({color:0x8b0000,from:'stomach',count:18,spread:0.16,gravity:-2.2,speed:0.5,life:1.4}); break;
+        default: break;
+      }
+      
+      // Set timeout to clear action after duration
+      actionTimeout = setTimeout(() => { 
+        clearCurrentAction(); 
+      }, ACTION_DURATION);
+    }
+    
+
+
+    // Manual control function for action buttons
+    function performAction(actionType) {
+      log(`Manual action triggered: ${actionType}`, 'info');
+      executeActionsImmediately([actionType]);
+    }
+
+    function clearCurrentAction(){ 
+      if(!currentAction) return; 
+      log(`Clearing action: ${currentAction}`,'info'); 
+      
+      // Hide emoji
+      hideActionEmoji();
+      
+      // Clear all animation flags
+      currentAction=null; 
+      anim.wave=0; anim.leg=0; anim.headWobble=0; anim.itch=0; 
+      
+      // Reset rig positions and rotations
+      rig.shoulderR.rotation.set(0,0,0); rig.shoulderL.rotation.set(0,0,0); 
+      rig.shoulderR.position.set(0.28,-0.15,0); rig.shoulderL.position.set(-0.28,-0.15,0); 
+      rig.neck.rotation.set(0,0,0); 
+      
+      // Clear visual effects
+      setFeverTint(false); 
+      clearEffects(); 
+      
+      // Clear any active particle systems (especially for nausea)
+      if (window.activeParticles && Array.isArray(window.activeParticles)) {
+        window.activeParticles.forEach(particle => {
+          if (particle && particle.dispose) {
+            particle.dispose();
+          }
+        });
+        window.activeParticles = [];
+      }
+      
+      updateStatus('Ready for next action'); 
+      updateActionStatus('Ready - No active actions');
+      
+      if(actionTimeout){ 
+        clearTimeout(actionTimeout); 
+        actionTimeout=null; 
+      } 
+    }
+
+    // Action helpers
+    function headNod(snappy=false){ const amp=snappy?0.5:0.35; const t0=performance.now(); const dur=1000; activeEffects.push({ ttl:dur/1000, update:()=>{ const t=(performance.now()-t0)/dur; const e=Math.sin(t*Math.PI); rig.neck.rotation.x = -amp*e; }, cleanup:()=>{ rig.neck.rotation.x=0; } }); }
+    function headCough(){ const amp=0.08; const t0=performance.now(); const dur=1000; activeEffects.push({ ttl:dur/1000, update:()=>{ const t=(performance.now()-t0)/dur; const e=Math.sin(t*Math.PI); rig.neck.rotation.x = amp*e; }, cleanup:()=>{ rig.neck.rotation.x=0; } }); }
+    function handsToStomach(){ const t0=performance.now(); const dur=700; const startL=rig.shoulderL.rotation.z, startR=rig.shoulderR.rotation.z; activeEffects.push({ ttl:dur/1000, update:()=>{ const t=Math.min(1,(performance.now()-t0)/dur); const e=t<0.5 ? (t*2) : (2-t*2); rig.shoulderL.rotation.z = -0.6*e; rig.shoulderR.rotation.z = 0.6*e; }, cleanup:()=>{ rig.shoulderL.rotation.z=0; rig.shoulderR.rotation.z=0; } }); }
+    function thermometerMesh(duration=3){ const g=new THREE.CylinderGeometry(0.01,0.01,0.25,12); const m=new THREE.MeshStandardMaterial({ color:0xff4444, emissive:0x550000 }); const tube=new THREE.Mesh(g,m); const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.025,16,16),m); const mouth=rig.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0.12,0,0.02)); tube.position.copy(mouth); bulb.position.copy(mouth).add(new THREE.Vector3(0,-0.14,0)); scene.add(tube,bulb); activeEffects.push({ ttl:duration, cleanup:()=>{ scene.remove(tube); scene.remove(bulb); g.dispose(); m.dispose(); } }); }
+
+    // Chat functionality - improved version from 2D
+    function addMessage(content, isDoctor = false) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
+      
+      // Create avatar
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'message-avatar';
+      avatarDiv.textContent = isDoctor ? 'Dr' : patientName[0];
+      
+      // Create content container
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      
+      // Create text div
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.textContent = content;
+      contentDiv.appendChild(textDiv);
+      
+      // Create bottom actions container for patient messages
+      if (!isDoctor) {
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'message-actions';
+        
+        // Add audio button with label
+        const audioButton = document.createElement('button');
+        audioButton.className = 'audio-btn';
+        audioButton.innerHTML = '🔊 Hear Audio';
+        audioButton.title = 'Generate audio for this message';
+        audioButton.onclick = (event) => generateAudio(content, event);
+        actionsContainer.appendChild(audioButton);
+        
+        contentDiv.appendChild(actionsContainer);
+      }
+      
+      messageDiv.appendChild(avatarDiv);
+      messageDiv.appendChild(contentDiv);
+      messagesDiv.appendChild(messageDiv);
+      
+      // Ensure proper scrolling
+      setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, 100);
+      
+      return contentDiv; // Return content div for adding detected actions
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    function handleDiagnosisKeyPress(event) {
+      if (event.key === 'Enter') {
+        submitDiagnosis();
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const typing = document.getElementById('typing');
+      const message = input.value.trim();
+      
+      if (!message) return;
+      
+      // Disable input and button
+      input.disabled = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      
+      // Add doctor message to chat
+      addMessage(message, true);
+      input.value = '';
+      
+      // Show typing indicator
+      typing.style.display = 'block';
+      
+      // Send to backend
+      fetch('/send_message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Hide typing indicator
+        typing.style.display = 'none';
+        
+        // Add patient response with new format
+        const contentDiv = addMessage(data.response, false);
+        
+        // Check if chat should end (thankyou detection)
+        if (data.should_end_chat) {
+          setTimeout(() => {
+            endConsultation();
+          }, 2000);
+        }
+        
+        // Add detected actions indicator if any (positioned at the bottom)
+        if (data.detected_actions && data.detected_actions.length > 0) {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'detected-actions';
+          actionsDiv.textContent = `🎭 Detected: ${data.detected_actions.join(', ')}`;
+          
+          // Find the actions container and add detected actions there
+          const actionsContainer = contentDiv.querySelector('.message-actions');
+          if (actionsContainer) {
+            actionsContainer.appendChild(actionsDiv);
+          } else {
+            // Fallback: create actions container if it doesn't exist
+            const newActionsContainer = document.createElement('div');
+            newActionsContainer.className = 'message-actions';
+            newActionsContainer.appendChild(actionsDiv);
+            contentDiv.appendChild(newActionsContainer);
+          }
+          
+          // Execute the actions immediately using the new system
+          log(`Executing actions from message: [${data.detected_actions.join(', ')}]`, 'info');
+          executeActionsImmediately(data.detected_actions);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        typing.style.display = 'none';
+        addMessage('Sorry, I had trouble responding. Please try again.', false);
+      })
+      .finally(() => {
+        // Re-enable input and button
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        input.focus();
+      });
+    }
+
+    // Action polling and emoji display
+    function updateActionStatus(status) {
+      const statusEl = document.getElementById('actionStatus');
+      if (statusEl) statusEl.textContent = status;
+    }
+
+    function showActionEmoji(actionType) {
+      const emojiMap = {
+        'wave': '👋', 'cough': '😷', 'headache': '🤕', 'itch': '🤏',
+                        'fever': '🤒', 'stomach': '🫃', 'leg': '🦵', 'dizzy': '😵',
+        'sneeze': '🤧', 'nausea': '🤢', 'blood': '🩸', 'chest': '❤️'
+      };
+      
+      const emojiEl = document.getElementById('actionEmoji');
+      if (emojiEl && emojiMap[actionType]) {
+        emojiEl.textContent = emojiMap[actionType];
+        emojiEl.style.display = 'block';
+        emojiEl.style.animation = 'bounce 0.6s ease-in-out infinite alternate';
+      }
+    }
+
+    function hideActionEmoji() {
+      const emojiEl = document.getElementById('actionEmoji');
+      if (emojiEl) {
+        emojiEl.style.display = 'none';
+        emojiEl.style.animation = '';
+      }
+    }
+
+    // Queue polling removed
+
+    // Queue clearing removed
+
+    function newPatient() {
+      if (confirm('Are you sure you want to generate a new patient? This will end the current consultation.')) {
+        fetch('/new_patient', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Clear any existing actions and MCQ before reloading
+            clearCurrentAction();
+            hideMCQ();
+            // Reset messages to full height
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.classList.remove('compact-height');
+            messagesDiv.classList.add('full-height');
+            setTimeout(() => window.location.reload(), 500);
+          } else {
+            alert('Error generating new patient. Please try again.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error generating new patient. Please try again.');
+        });
+      }
+    }
+
+    function goHome() {
+      window.location.href = '/';
+    }
+
+    // MCQ and Hint Functions
+    function generateMCQ() {
+      fetch('/generate_mcq', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.questions) {
+          mcqData = data;
+          displayMCQ(data.questions);
+          showMCQSection();
+        }
+      })
+      .catch(error => {
+        console.error('Error generating MCQ:', error);
+        addMessage('Sorry, I had trouble generating MCQ questions. Please try again.', false);
+      });
+    }
+
+    function displayMCQ(questions) {
+      const mcqContainer = document.getElementById('mcqQuestions');
+      mcqContainer.innerHTML = '';
+      
+      questions.forEach((question, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'mcq-question';
+        questionDiv.innerHTML = `
+          <h4>Question ${index + 1}:</h4>
+          <p>${question.question}</p>
+          <div class="mcq-options">
+            ${question.options.map((option, optIndex) => `
+              <div class="mcq-option" onclick="selectOption(this, ${index}, ${optIndex})">
+                ${String.fromCharCode(65 + optIndex)}. ${option}
+              </div>
+            `).join('')}
+          </div>
+          <div class="mcq-explanation" id="explanation-${index}">
+            <strong>Explanation:</strong> ${question.explanation}
+          </div>
+        `;
+        mcqContainer.appendChild(questionDiv);
+      });
+    }
+
+    function selectOption(element, questionIndex, optionIndex) {
+      const questionDiv = element.closest('.mcq-question');
+      const options = questionDiv.querySelectorAll('.mcq-option');
+      
+      // Remove previous selections
+      options.forEach(opt => opt.classList.remove('selected'));
+      
+      // Select current option
+      element.classList.add('selected');
+      
+      // Store selection
+      if (!mcqData.selections) mcqData.selections = {};
+      mcqData.selections[questionIndex] = optionIndex;
+    }
+
+    function checkAnswers() {
+      if (!mcqData || !mcqData.questions) return;
+      
+      const questions = document.querySelectorAll('.mcq-question');
+      
+      mcqData.questions.forEach((question, index) => {
+        const questionDiv = questions[index];
+        const options = questionDiv.querySelectorAll('.mcq-option');
+        const selectedIndex = mcqData.selections ? mcqData.selections[index] : -1;
+        
+        options.forEach((option, optIndex) => {
+          option.classList.remove('correct', 'incorrect');
+          
+          if (optIndex === question.options.indexOf(question.correct_answer)) {
+            option.classList.add('correct');
+          } else if (optIndex === selectedIndex) {
+            option.classList.add('incorrect');
+          }
+        });
+        
+        // Show explanation
+        const explanation = questionDiv.querySelector('.mcq-explanation');
+        explanation.classList.add('show');
+      });
+    }
+
+    function showMCQSection() {
+      const mcqSection = document.getElementById('mcqSection');
+      const messagesDiv = document.getElementById('messages');
+      
+      // Show MCQ section with animation
+      mcqSection.style.display = 'block';
+      // Small delay to ensure display:block is applied before animation
+      setTimeout(() => {
+        mcqSection.classList.remove('hide');
+        mcqSection.classList.add('show');
+      }, 10);
+      
+      // Compact the messages container
+      messagesDiv.classList.remove('full-height');
+      messagesDiv.classList.add('compact-height');
+    }
+
+    function hideMCQ() {
+      const mcqSection = document.getElementById('mcqSection');
+      const messagesDiv = document.getElementById('messages');
+      
+      // Hide MCQ section with animation
+      mcqSection.classList.remove('show');
+      mcqSection.classList.add('hide');
+      
+      // Expand the messages container back to full height
+      messagesDiv.classList.remove('compact-height');
+      messagesDiv.classList.add('full-height');
+      
+      // Hide the section completely after animation
+      setTimeout(() => {
+        mcqSection.style.display = 'none';
+      }, 400);
+    }
+    
+    // Audio generation function
+    function generateAudio(message, event) {
+      const audioBtn = event.target;
+      
+      // Set loading state
+      audioBtn.classList.add('loading');
+      audioBtn.innerHTML = '⏳';
+      audioBtn.disabled = true;
+      
+      // Call backend to generate audio
+      fetch('/generate_audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Audio generation response:', data); // Debug logging
+        if (data.success && data.audio_url) {
+          // Create audio element and play
+          const audio = new Audio(data.audio_url);
+          audio.play();
+          
+          // Set success state
+          audioBtn.classList.remove('loading');
+          audioBtn.classList.add('success');
+          audioBtn.innerHTML = '✅';
+          
+          // Reset after 3 seconds
+          setTimeout(() => {
+            audioBtn.classList.remove('success');
+            audioBtn.innerHTML = '🔊';
+            audioBtn.disabled = false;
+          }, 3000);
+          
+        } else {
+          throw new Error(data.error || 'Failed to generate audio');
+        }
+      })
+      .catch(error => {
+        console.error('Audio generation error:', error);
+        
+        // Set error state
+        audioBtn.classList.remove('loading');
+        audioBtn.classList.add('error');
+        audioBtn.innerHTML = '❌';
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          audioBtn.classList.remove('error');
+          audioBtn.innerHTML = '🔊';
+          audioBtn.disabled = false;
+        }, 3000);
+      });
+    }
+
+    function showHint() {
+      fetch('/get_hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.hint) {
+          const contentDiv = addMessage('💡 Hint: ' + data.hint, false);
+          // Add visual styling to hint message
+          contentDiv.style.background = '#fff3cd';
+          contentDiv.style.border = '1px solid #ffeaa7';
+        }
+      })
+      .catch(error => {
+        console.error('Error getting hint:', error);
+        addMessage('Sorry, I had trouble getting a hint. Please try again.', false);
+      });
+    }
+
+    // Menu toggle function
+  function toggleMenu() {
+    const menu = document.getElementById('menuDropdown');
+    menu.classList.toggle('show');
+  }
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', function(event) {
+    const menu = document.getElementById('menuDropdown');
+    const menuBtn = document.querySelector('.menu-btn');
+    if (!menuBtn.contains(event.target) && !menu.contains(event.target)) {
+      menu.classList.remove('show');
+    }
+  });
+  
+  function toggleManualControls() {
+      const controlPanel = document.querySelector('.control-panel');
+      const mainContainer = document.querySelector('.main-container');
+      
+      if (controlPanel.style.display === 'none') {
+        controlPanel.style.display = 'block';
+        mainContainer.classList.add('with-controls');
+      } else {
+        controlPanel.style.display = 'none';
+        mainContainer.classList.remove('with-controls');
+      }
+    }
+
+    // Keyboard shortcuts removed - no more automatic action triggering
+
+    // Boot
+    window.addEventListener('DOMContentLoaded',async()=>{
+      try{
+        log('Initializing Three.js…','info');
+        await ensureThree();
+        initThree();
+        buildCharacter();
+        
+        // Ready for per-message actions
+        log('3D character ready - actions execute per message (no queue)','info');
+        
+      }catch(e){
+        log('Initialization error: '+(e && e.message ? e.message : e),'error');
+        updateStatus('Initialization failed');
+      }
+    });
+
+    // Feedback Modal Functions
+    function openFeedbackModal() {
+      document.getElementById('feedbackModal').style.display = 'block';
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').style.display = 'none';
+      document.body.style.overflow = 'auto'; // Restore scrolling
+      // Reset form
+      document.getElementById('feedbackForm').reset();
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('feedbackModal');
+      if (event.target === modal) {
+        closeFeedbackModal();
+      }
+      
+      const patientModal = document.getElementById('patientDetailsModal');
+      if (event.target === patientModal) {
+        closePatientDetailsModal();
+      }
+      
+      const diagnosisModal = document.getElementById('diagnosisModal');
+      if (event.target === diagnosisModal) {
+        hideDiagnosisModal();
+      }
+    }
+    
+    // Handle form submission - wait for DOM to be loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const feedbackData = {
+        authenticity_rating: formData.get('authenticity_rating'),
+        educational_value_rating: formData.get('educational_value_rating'),
+        interaction_quality_rating: formData.get('interaction_quality_rating'),
+        communication_consistency_rating: formData.get('communication_consistency_rating'),
+        symptom_realism_rating: formData.get('symptom_realism_rating'),
+        additional_comments: formData.get('additional_comments')
+      };
+      
+      // Validate that all required ratings are selected
+      const requiredFields = ['authenticity_rating', 'educational_value_rating', 'interaction_quality_rating', 
+                            'communication_consistency_rating', 'symptom_realism_rating'];
+      const missingFields = requiredFields.filter(field => !feedbackData[field]);
+      
+      if (missingFields.length > 0) {
+        alert('Please rate all 5 questions before submitting.');
+        return;
+      }
+      
+      // Submit feedback
+      fetch('/submit_feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Thank you for your feedback! It will help us improve the simulator.');
+          closeFeedbackModal();
+          // Clear form for potential resubmission
+          document.getElementById('feedbackForm').reset();
+          // Clean URL by removing any parameters and refreshing
+          setTimeout(() => {
+            const currentUrl = window.location.href.split('?')[0];
+            window.history.replaceState({}, document.title, currentUrl);
+          }, 100);
+        } else {
+          alert('Error submitting feedback. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting feedback. Please try again.');
+      });
+    });
+    });
+
+    // Patient Details Modal Functions
+    function showPatientDetailsModal() {
+      document.getElementById('patientDetailsModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closePatientDetailsModal() {
+      document.getElementById('patientDetailsModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Hint function
+    function showHint() {
+      fetch('/get_hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.hint) {
+          addMessage('💡 Hint: ' + data.hint, false);
+        }
+      });
+    }
+    
+    // Add message function
+    function addMessage(content, isDoctor = false) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
+      
+      // Create message structure
+      let messageHTML = `
+        <div class="message-avatar">${isDoctor ? 'Dr' : '{{ patient_data.name }}'[0]}</div>
+        <div class="message-content">
+          <div class="text">${content}</div>
+        </div>
+      `;
+      
+      messageDiv.innerHTML = messageHTML;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Diagnosis Modal Functions
+    function showDiagnosisModal() {
+      document.getElementById('diagnosisModal').style.display = 'flex';
+      document.getElementById('diagnosisInput').value = '';
+      document.getElementById('diagnosisResult').style.display = 'none';
+    }
+    
+    function hideDiagnosisModal() {
+      document.getElementById('diagnosisModal').style.display = 'none';
+    }
+    
+    function submitDiagnosis() {
+      const diagnosis = document.getElementById('diagnosisInput').value.trim();
+      if (!diagnosis) return;
+      
+      fetch('/submit_diagnosis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diagnosis })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.correct) {
+          hideDiagnosisModal();
+          addMessage('🏥 Correct diagnosis! Consultation ended. Thank you for using the Medical Patient Simulator!', true);
+          setTimeout(() => { endConsultation(); }, 1000);
+        } else {
+          document.getElementById('diagnosisResult').textContent = 'Incorrect diagnosis. Please continue the consultation.';
+          document.getElementById('diagnosisResult').style.display = 'block';
+        }
+      })
+      .catch(error => {
+        document.getElementById('diagnosisResult').textContent = 'Error submitting diagnosis.';
+        document.getElementById('diagnosisResult').style.display = 'block';
+      });
+    }
+    
+    function hideDiagnosisModal() {
+      document.getElementById('diagnosisModal').style.display = 'none';
+    }
+    
+    function submitDiagnosis() {
+      const diagnosis = document.getElementById('diagnosisInput').value.trim();
+      if (!diagnosis) return;
+      
+      fetch('/submit_diagnosis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diagnosis })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.correct) {
+          hideDiagnosisModal();
+          addMessage('🏥 Correct diagnosis! Consultation ended. Thank you for using the Medical Patient Simulator!', true);
+          setTimeout(() => { endConsultation(); }, 1000);
+        } else {
+          document.getElementById('diagnosisResult').textContent = 'Incorrect diagnosis. Please continue the consultation.';
+          document.getElementById('diagnosisResult').style.display = 'block';
+        }
+      })
+      .catch(error => {
+        document.getElementById('diagnosisResult').textContent = 'Error submitting diagnosis.';
+        document.getElementById('diagnosisResult').style.display = 'block';
+      });
+    }
+
+    // Chat Ending Functions
+    function endConsultation() {
+      // Disable input
+      document.getElementById('messageInput').disabled = true;
+      document.getElementById('sendBtn').disabled = true;
+      
+      // Add end consultation message
+      addMessage("🏥 Consultation ended. Thank you for using the Medical Patient Simulator!", true);
+      
+      // Show options to continue
+      setTimeout(() => {
+        const endDiv = document.createElement('div');
+        endDiv.className = 'consultation-end';
+        endDiv.innerHTML = `
+          <div class="end-options">
+            <button onclick="newPatient()" class="btn btn-primary">New Patient</button>
+            <button onclick="goHome()" class="btn btn-secondary">Go Home</button>
+          </div>
+        `;
+        document.getElementById('messages').appendChild(endDiv);
+      }, 1000);
+    }
+  </script>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="flex: 1;">
+          <h2>📝 Session Feedback</h2>
+          <p style="margin-top: 10px;">Help us improve the Medical Patient Simulator</p>
+        </div>
+        <span class="close" onclick="closeFeedbackModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="feedbackForm">
+          <!-- Question 1: Authenticity -->
+          <div class="feedback-question">
+            <h3>1. How believable did the virtual patient feel?</h3>
+            <div class="likert-scale">
+              <div class="likert-option">
+                <input type="radio" id="auth1" name="authenticity_rating" value="1" required>
+                <label for="auth1">1</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="auth2" name="authenticity_rating" value="2">
+                <label for="auth2">2</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="auth3" name="authenticity_rating" value="3">
+                <label for="auth3">3</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="auth4" name="authenticity_rating" value="4">
+                <label for="auth4">4</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="auth5" name="authenticity_rating" value="5">
+                <label for="auth5">5</label>
+              </div>
+            </div>
+            <div class="likert-labels">
+              <span>Not believable at all</span>
+              <span>Very believable</span>
+            </div>
+          </div>
+
+          <!-- Question 2: Educational Value -->
+          <div class="feedback-question">
+            <h3>2. How useful was this simulation for medical training?</h3>
+            <div class="likert-scale">
+              <div class="likert-option">
+                <input type="radio" id="edu1" name="educational_value_rating" value="1" required>
+                <label for="edu1">1</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="edu2" name="educational_value_rating" value="2">
+                <label for="edu2">2</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="edu3" name="educational_value_rating" value="3">
+                <label for="edu3">3</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="edu4" name="educational_value_rating" value="4">
+                <label for="edu4">4</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="edu5" name="educational_value_rating" value="5">
+                <label for="edu5">5</label>
+              </div>
+            </div>
+            <div class="likert-labels">
+              <span>Not useful at all</span>
+              <span>Very useful</span>
+            </div>
+          </div>
+
+          <!-- Question 3: Interaction Quality -->
+          <div class="feedback-question">
+            <h3>3. How realistic was the overall conversation?</h3>
+            <div class="likert-scale">
+              <div class="likert-option">
+                <input type="radio" id="qual1" name="interaction_quality_rating" value="1" required>
+                <label for="qual1">1</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="qual2" name="interaction_quality_rating" value="2">
+                <label for="qual2">2</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="qual3" name="interaction_quality_rating" value="3">
+                <label for="qual3">3</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="qual4" name="interaction_quality_rating" value="4">
+                <label for="qual4">4</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="qual5" name="interaction_quality_rating" value="5">
+                <label for="qual5">5</label>
+              </div>
+            </div>
+            <div class="likert-labels">
+              <span>Not realistic at all</span>
+              <span>Very realistic</span>
+            </div>
+          </div>
+
+          <!-- Question 4: Communication Consistency -->
+          <div class="feedback-question">
+            <h3>4. How consistently did the patient maintain their personality?</h3>
+            <div class="likert-scale">
+              <div class="likert-option">
+                <input type="radio" id="cons1" name="communication_consistency_rating" value="1" required>
+                <label for="cons1">1</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="cons2" name="communication_consistency_rating" value="2">
+                <label for="cons2">2</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="cons3" name="communication_consistency_rating" value="3">
+                <label for="cons3">3</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="cons4" name="communication_consistency_rating" value="4">
+                <label for="cons4">4</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="cons5" name="communication_consistency_rating" value="5">
+                <label for="cons5">5</label>
+              </div>
+            </div>
+            <div class="likert-labels">
+              <span>Very inconsistent</span>
+              <span>Very consistent</span>
+            </div>
+          </div>
+
+          <!-- Question 5: Symptom Realism -->
+          <div class="feedback-question">
+            <h3>5. How realistic were the patient's symptoms and medical presentation?</h3>
+            <div class="likert-scale">
+              <div class="likert-option">
+                <input type="radio" id="symp1" name="symptom_realism_rating" value="1" required>
+                <label for="symp1">1</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="symp2" name="symptom_realism_rating" value="2">
+                <label for="symp2">2</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="symp3" name="symptom_realism_rating" value="3">
+                <label for="symp3">3</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="symp4" name="symptom_realism_rating" value="4">
+                <label for="symp4">4</label>
+              </div>
+              <div class="likert-option">
+                <input type="radio" id="symp5" name="symptom_realism_rating" value="5">
+                <label for="symp5">5</label>
+              </div>
+            </div>
+            <div class="likert-labels">
+              <span>Not realistic at all</span>
+              <span>Very realistic</span>
+            </div>
+          </div>
+
+          <!-- Additional Comments -->
+          <div class="feedback-question">
+            <h3>6. Additional comments or suggestions:</h3>
+            <textarea class="text-input" name="additional_comments" placeholder="Share any additional thoughts, suggestions, or specific feedback about your experience..."></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="modal-btn cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
+            <button type="submit" class="modal-btn submit-btn">Submit Feedback</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

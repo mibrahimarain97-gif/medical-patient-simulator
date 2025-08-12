@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Medical Patient Avatar</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left side - Controls and Logs (30%) */
+        .control-panel {
+            width: 30%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .action-btn:active {
+            transform: translateY(1px);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+        
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            height: 200px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.success {
+            color: #00ff00;
+        }
+        
+        .log-entry.error {
+            color: #ff4444;
+        }
+        
+        .log-entry.info {
+            color: #44aaff;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .view-controls {
+            margin-bottom: 20px;
+        }
+
+        .view-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .view-controls button:hover {
+            background: #2980b9;
+        }
+        
+        /* Right side - 3D Character Display (70%) */
+        .character-panel {
+            width: 70%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #threejs-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .status-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 200px;
+            text-align: center;
+            z-index: 50;
+        }
+
+        .fps-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Panel - Controls and Logs -->
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>🎭 Character Actions</h3>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="performAction('wave')">👋 Wave</button>
+                    <button class="action-btn" onclick="performAction('cough')">😷 Cough</button>
+                    <button class="action-btn" onclick="performAction('headache')">🤕 Headache</button>
+                    <button class="action-btn" onclick="performAction('itch')">🤏 Itch</button>
+                    <button class="action-btn" onclick="performAction('fever')">🤒 Fever</button>
+                    <button class="action-btn" onclick="performAction('stomach')">🤱 Stomach</button>
+                    <button class="action-btn" onclick="performAction('leg')">🦵 Leg</button>
+                    <button class="action-btn" onclick="performAction('dizzy')">😵 Dizzy</button>
+                    <button class="action-btn" onclick="performAction('sneeze')">🤧 Sneeze</button>
+                    <button class="action-btn" onclick="performAction('nausea')">🤢 Nausea</button>
+                    <button class="action-btn" onclick="performAction('blood')">🩸 Blood</button>
+                    <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>📷 View Controls</h3>
+                <div class="view-controls">
+                    <button onclick="setView('front')">Front View</button>
+                    <button onclick="setView('back')">Back View</button>
+                    <button onclick="setView('left')">Left Side</button>
+                    <button onclick="setView('right')">Right Side</button>
+                    <button onclick="setView('reset')">Reset View</button>
+                </div>
+            </div>
+
+
+            
+            <div class="control-section">
+                <h3>📝 Action Log</h3>
+                <div class="log-container" id="actionLog">
+                    <div class="log-entry info">[SYSTEM] 3D Character ready</div>
+                </div>
+                <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+            </div>
+        </div>
+        
+        <!-- Right Panel - 3D Character Display -->
+        <div class="character-panel">
+            <div class="status-display" id="statusDisplay">
+                Ready for 3D action testing
+            </div>
+            
+            <div class="fps-counter" id="fpsCounter">
+                FPS: 60
+            </div>
+            
+            <div style="position: absolute; top: 70px; left: 20px; background: rgba(255,255,255,0.85); color: #333; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; z-index: 50;">
+                Left mouse: rotate • Right mouse: pan • Wheel: zoom
+            </div>
+            
+            <div id="threejs-container"></div>
+        </div>
+    </div>
+
+    <!-- Three.js Library - Enhanced Version -->
+    <script src="/static/vendor/three/three.min.js"></script>
+
+    <script>
+        // =====================
+        // GLOBAL VARIABLES
+        // =====================
+        let scene, camera, renderer, controls;
+        let avatar = {};
+        let mixer, clock;
+        let particles = [];
+        let currentAction = null;
+        let actionTimeout = null;
+        let animationId;
+        
+        // FPS counter
+        let fps = 60;
+        let lastTime = performance.now();
+        let frameCount = 0;
+
+        // =====================
+        // LOGGING SYSTEM
+        // =====================
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('actionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('actionLog').innerHTML = 
+                '<div class="log-entry info">[SYSTEM] Log cleared</div>';
+        }
+        
+        function updateStatus(status) {
+            document.getElementById('statusDisplay').textContent = status;
+            log(`Status updated: ${status}`, 'info');
+        }
+
+        // =====================
+        // THREE.JS SETUP
+        // =====================
+        function initThreeJS() {
+            log('Initializing Three.js 3D scene...', 'info');
+            
+            // Double-check Three.js availability
+            if (!THREE || !THREE.Scene) {
+                throw new Error('Three.js Scene constructor not available');
+            }
+            
+            const container = document.getElementById('threejs-container');
+            if (!container) {
+                throw new Error('threejs-container element not found');
+            }
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+            
+            // Camera - BETTER POSITIONED for Roblox-style character
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 2.5, 4);  // Higher and closer
+            
+            // Renderer - ENHANCED WITH NEWER THREE.JS FEATURES
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // Standard encoding for compatibility
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+            
+            // Clock for animations
+            clock = new THREE.Clock();
+            
+            log('Three.js scene initialized successfully', 'success');
+        }
+
+        // =====================
+        // LIGHTING SETUP
+        // =====================
+        function setupLighting() {
+            log('Setting up 3D lighting...', 'info');
+            
+            // Ambient light for overall illumination
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            // Main directional light (sun)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 50;
+            directionalLight.shadow.camera.left = -10;
+            directionalLight.shadow.camera.right = 10;
+            directionalLight.shadow.camera.top = 10;
+            directionalLight.shadow.camera.bottom = -10;
+            scene.add(directionalLight);
+            
+            // Fill light from the side
+            const fillLight = new THREE.DirectionalLight(0x88ccff, 0.4);
+            fillLight.position.set(-5, 5, 2);
+            scene.add(fillLight);
+            
+            // Rim light from behind
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(0, 5, -5);
+            scene.add(rimLight);
+            
+            log('Lighting setup complete', 'success');
+        }
+
+        // =====================
+        // ORBIT CONTROLS SETUP
+        // =====================
+        function setupControls() {
+            log('Setting up camera controls...', 'info');
+            
+            try {
+                // Import OrbitControls dynamically
+                const script = document.createElement('script');
+                script.src = '/static/vendor/three/OrbitControls.js';
+                script.type = 'module';
+                script.onload = () => {
+                    try {
+                        // Initialize OrbitControls properly
+                        if (THREE.OrbitControls) {
+                            controls = new THREE.OrbitControls(camera, renderer.domElement);
+                            controls.target.set(0, 2.5, 0); // Look at avatar center (higher)
+                            controls.enableDamping = true;
+                            controls.dampingFactor = 0.05;
+                            controls.minDistance = 2;
+                            controls.maxDistance = 10;
+                            controls.maxPolarAngle = Math.PI * 0.8;
+                            controls.minPolarAngle = Math.PI * 0.1;
+                            controls.update();
+                            log('OrbitControls initialized successfully', 'success');
+                        }
+                    } catch (e) {
+                        log('Failed to initialize OrbitControls: ' + e.message, 'error');
+                        setupFallbackControls();
+                    }
+                };
+                script.onerror = () => {
+                    log('Failed to load OrbitControls script', 'error');
+                    setupFallbackControls();
+                };
+                document.head.appendChild(script);
+            } catch (e) {
+                log('Error setting up controls: ' + e.message, 'error');
+                setupFallbackControls();
+            }
+        }
+
+        function setupFallbackControls() {
+            log('Setting up fallback camera controls...', 'info');
+            
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+            let targetRotationX = 0, targetRotationY = 0;
+            let rotationX = 0, rotationY = 0;
+            
+            const container = document.getElementById('threejs-container');
+            
+            container.addEventListener('mousedown', (event) => {
+                isMouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            container.addEventListener('mousemove', (event) => {
+                if (!isMouseDown) return;
+                
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                
+                targetRotationY += deltaX * 0.01;
+                targetRotationX += deltaY * 0.01;
+                
+                // Limit vertical rotation
+                targetRotationX = Math.max(-Math.PI/3, Math.min(Math.PI/3, targetRotationX));
+                
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            container.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+            
+            container.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                const zoom = event.deltaY * 0.01;
+                camera.position.z = Math.max(2, Math.min(10, camera.position.z + zoom));
+            });
+            
+            // Update camera rotation smoothly
+            window.updateControls = function() {
+                rotationX += (targetRotationX - rotationX) * 0.1;
+                rotationY += (targetRotationY - rotationY) * 0.1;
+                
+                const radius = camera.position.length();
+                camera.position.x = Math.sin(rotationY) * Math.cos(rotationX) * radius;
+                camera.position.y = Math.sin(rotationX) * radius + 2;
+                camera.position.z = Math.cos(rotationY) * Math.cos(rotationX) * radius;
+                
+                camera.lookAt(0, 2.5, 0); // Look at avatar center (higher)
+            };
+        }
+
+        // =====================
+        // AVATAR CREATION - SYSTEMATIC APPROACH
+        // =====================
+        function createAvatar() {
+            log('Creating 3D avatar systematically...', 'info');
+            
+            // Avatar container group at world center
+            avatar.group = new THREE.Group();
+            avatar.group.position.set(0, 0, 0);
+            scene.add(avatar.group);
+            
+            // Create body parts in logical order
+            createTorsoCenter();      // Body at center - calculate dimensions
+            createHeadOnTop();        // Head positioned on top of body
+            createArmsConnected();    // Connected arms as single objects on sides
+            createLegsAtBottom();     // Legs at bottom
+            
+            // Add ground plane
+            createGround();
+            
+            log('3D avatar created successfully', 'success');
+        }
+
+        function createHeadOnTop() {
+            log('Creating head positioned on top of body...', 'info');
+            
+            // COORDINATE PLANNING:
+            // Torso top: y = 2.1
+            // Head height: 0.6 units
+            // Head center: y = 2.1 + 0.4 = 2.5 (positioned on top of torso)
+            // Head spans: y = 2.2 to y = 2.8
+            
+            const skinMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffe8d1,  // Much lighter skin tone to compensate for 3D shading
+                metalness: 0.0,
+                roughness: 0.6,   // Lower roughness for less shadow
+                emissive: 0x221108  // Slight self-illumination to reduce shadows
+            });
+            
+            avatar.head = new THREE.Group();
+            avatar.head.position.set(0, 2.5, 0);  // ON TOP OF TORSO
+            
+            // Head - elongated ellipsoid (less circular, more vertical)
+            const headGeometry = new THREE.SphereGeometry(0.35, 24, 24);
+            avatar.headMesh = new THREE.Mesh(headGeometry, skinMaterial);
+            avatar.headMesh.scale.set(0.9, 1.2, 1.0);  // Narrower width, taller height, same depth
+            avatar.headMesh.castShadow = true;
+            avatar.headMesh.receiveShadow = true;
+            avatar.head.add(avatar.headMesh);
+            
+            // Hair on top - adjusted for elongated head
+            const hairGeometry = new THREE.SphereGeometry(0.34, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.35);
+            const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x3b2e2a });
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.scale.set(0.9, 1.1, 1.0);  // Match head elongation
+            hair.position.y = 0.1;  // Slightly higher for elongated head
+            hair.castShadow = true;
+            avatar.head.add(hair);
+            
+            // Transparent forehead overlay - thinner from bottom to avoid covering eyes
+            const foreheadGeometry = new THREE.SphereGeometry(0.32, 24, 24, 0, Math.PI * 2, Math.PI * 0.15, Math.PI * 0.25);
+            const foreheadMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,  // Red color for headache visualization
+                transparent: true,
+                opacity: 0.0,     // Completely transparent by default
+                emissive: 0xff0000,
+                emissiveIntensity: 0.0,  // No glow by default
+                depthTest: false  // Always render in front
+            });
+            avatar.forehead = new THREE.Mesh(foreheadGeometry, foreheadMaterial);
+            avatar.forehead.scale.set(0.9, 1.1, 1.0);  // Match head elongation
+            avatar.forehead.position.set(0, 0.05, 0.1);  // Moved forward for visibility
+            avatar.forehead.renderOrder = 1000;  // High render order for forefront
+            avatar.head.add(avatar.forehead);
+            
+            // Pain lines above hair - three crooked lines that blink during headache
+            avatar.painLines = [];
+            const painLineMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.0,  // Transparent by default
+                depthTest: false  // Always render in front
+            });
+            
+            // Create three crooked pain lines
+            for (let i = 0; i < 3; i++) {
+                const lineGroup = new THREE.Group();
+                const xOffset = (i - 1) * 0.15;  // Spread lines across forehead
+                const yPos = 0.25 + Math.random() * 0.1;  // Above hair, slight variation
+                
+                // Create crooked line using multiple small rectangles
+                for (let j = 0; j < 4; j++) {
+                    const segmentGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.01);
+                    const segment = new THREE.Mesh(segmentGeometry, painLineMaterial.clone());
+                    
+                    // Position segments to create crooked effect
+                    segment.position.set(
+                        xOffset + (Math.random() - 0.5) * 0.05,  // Random horizontal offset
+                        yPos + j * 0.06 + (Math.random() - 0.5) * 0.03,  // Vertical with random offset
+                        0.2  // Forward position
+                    );
+                    
+                    // Random rotation for crooked appearance
+                    segment.rotation.z = (Math.random() - 0.5) * 0.5;
+                    segment.renderOrder = 1001;  // Even higher than forehead
+                    
+                    lineGroup.add(segment);
+                    avatar.painLines.push(segment);
+                }
+                
+                avatar.head.add(lineGroup);
+            }
+            
+            // Bigger, horizontally flatter eyes with black block dots
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+            const eyeMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                metalness: 0.0,
+                roughness: 0.3,
+                emissive: 0x111111  // Slight glow to make eyes brighter
+            });
+            const pupilMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            
+            // Left eye - bigger, less horizontally flat
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.scale.set(1.15, 0.9, 1.0);  // Less wide, less flat (more natural)
+            leftEye.position.set(-0.12, 0.05, 0.3);
+            avatar.head.add(leftEye);
+            
+            // Left pupil - bigger black block dot
+            const leftPupil = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, 0.025), pupilMaterial);
+            leftPupil.position.set(-0.12, 0.05, 0.37);
+            avatar.head.add(leftPupil);
+            
+            // Right eye - bigger, less horizontally flat
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.scale.set(1.15, 0.9, 1.0);  // Less wide, less flat (more natural)
+            rightEye.position.set(0.12, 0.05, 0.3);
+            avatar.head.add(rightEye);
+            
+            // Right pupil - bigger black block dot
+            const rightPupil = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, 0.025), pupilMaterial);
+            rightPupil.position.set(0.12, 0.05, 0.37);
+            avatar.head.add(rightPupil);
+            
+            // Eyebrows - horizontal lines above eyes
+            const eyebrowMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3b2e2a,  // Same color as hair
+                metalness: 0.0,
+                roughness: 0.9
+            });
+            
+            // Left eyebrow
+            const leftEyebrowGeometry = new THREE.BoxGeometry(0.12, 0.02, 0.01);
+            const leftEyebrow = new THREE.Mesh(leftEyebrowGeometry, eyebrowMaterial);
+            leftEyebrow.position.set(-0.12, 0.12, 0.38);  // Above left eye
+            avatar.head.add(leftEyebrow);
+            
+            // Right eyebrow
+            const rightEyebrowGeometry = new THREE.BoxGeometry(0.12, 0.02, 0.01);
+            const rightEyebrow = new THREE.Mesh(rightEyebrowGeometry, eyebrowMaterial);
+            rightEyebrow.position.set(0.12, 0.12, 0.38);  // Above right eye
+            avatar.head.add(rightEyebrow);
+            
+            // Bigger nose - more prominent cylinder protruding from face
+            const noseGeometry = new THREE.CylinderGeometry(0.02, 0.025, 0.06, 8);
+            avatar.nose = new THREE.Mesh(noseGeometry, skinMaterial);
+            avatar.nose.position.set(0, -0.02, 0.36);
+            avatar.nose.rotation.x = Math.PI / 2;  // Rotate to point outward
+            avatar.nose.castShadow = true;
+            avatar.head.add(avatar.nose);
+            
+            // Even bigger, lower, darker mouth
+            const mouthGeometry = new THREE.SphereGeometry(0.03, 12, 12);  // Smaller default mouth for better animation contrast
+            const mouthMaterial = new THREE.MeshStandardMaterial({ color: 0x8b3333 });  // Darker red
+            avatar.mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            avatar.mouth.position.set(0, -0.18, 0.36);  // Even lower position
+            avatar.head.add(avatar.mouth);
+            
+            avatar.group.add(avatar.head);
+            
+            log('Head positioned: center_y=2.5, on top of torso', 'info');
+        }
+
+        function createTorsoCenter() {
+            log('Creating torso at center...', 'info');
+            
+            // COORDINATE PLANNING:
+            // Ground level: y = 0
+            // Torso center: y = 1.5 (centered)
+            // Torso height: 1.2 units
+            // Torso spans: y = 0.9 to y = 2.1
+            // Torso width: 0.4 units (radius 0.2)
+            // Torso depth: 0.3 units
+            
+            avatar.torso = new THREE.Group();
+            avatar.torso.position.set(0, 1.5, 0);  // CENTER OF TORSO
+            
+            // Main body - slightly thicker
+            const bodyGeometry = new THREE.CylinderGeometry(0.26, 0.28, 1.2, 16);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x4a90e2,
+                metalness: 0.1,
+                roughness: 0.85
+            });
+            avatar.torsoMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            avatar.torsoMesh.castShadow = true;
+            avatar.torsoMesh.receiveShadow = true;
+            avatar.torso.add(avatar.torsoMesh);
+            
+            // Chest section (upper part) with transparent indicator
+            avatar.chest = new THREE.Group();
+            avatar.chest.position.set(0, 0.3, 0);  // Upper part of torso
+            
+            // Create transparent chest indicator (red blink)
+            const chestIndicatorGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 16);
+            const chestIndicatorMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.0,
+                emissive: 0xff0000,
+                emissiveIntensity: 0.0,
+                depthTest: false
+            });
+            avatar.chestIndicator = new THREE.Mesh(chestIndicatorGeometry, chestIndicatorMaterial);
+            avatar.chestIndicator.position.set(0, 0, 0.05);  // Slightly forward from torso center
+            avatar.chestIndicator.renderOrder = 500;
+            avatar.chest.add(avatar.chestIndicator);
+            
+            avatar.torso.add(avatar.chest);
+            
+            // Stomach section (lower part) with transparent indicator
+            avatar.stomach = new THREE.Group();
+            avatar.stomach.position.set(0, -0.3, 0);  // Lower part of torso
+            
+            // Create transparent stomach indicator (green blink)
+            const stomachIndicatorGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 16);
+            const stomachIndicatorMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.0,
+                emissive: 0x00ff00,
+                emissiveIntensity: 0.0,
+                depthTest: false
+            });
+            avatar.stomachIndicator = new THREE.Mesh(stomachIndicatorGeometry, stomachIndicatorMaterial);
+            avatar.stomachIndicator.position.set(0, 0, 0.05);  // Slightly forward from torso center
+            avatar.stomachIndicator.renderOrder = 500;
+            avatar.stomach.add(avatar.stomachIndicator);
+            
+            avatar.torso.add(avatar.stomach);
+            
+            avatar.group.add(avatar.torso);
+            
+            log('Torso dimensions: height=1.2, center_y=1.5, spans y=0.9 to y=2.1', 'info');
+        }
+
+        function createArmsConnected() {
+            log('Creating connected arms as single objects on sides...', 'info');
+            
+            // COORDINATE PLANNING:
+            // Torso center: y = 1.5, radius = 0.22
+            // Shoulder position: y = 1.8 (upper torso)
+            // Arm total length: 0.7 units (0.35 upper + 0.35 lower)
+            // Left arm: x = -0.3 (left of torso)
+            // Right arm: x = +0.3 (right of torso)
+            // Z position: 0.5 (in front of everything)
+            
+            const armMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffe8d1,  // Much lighter skin tone to compensate for 3D shading
+                metalness: 0.0,
+                roughness: 0.6,   // Lower roughness for less shadow
+                emissive: 0x221108  // Slight self-illumination to reduce shadows
+            });
+            
+            // Set high render order for arms to be in foreground
+            const ARM_RENDER_ORDER = 100;
+            
+            // LEFT ARM AS ONE CONNECTED OBJECT
+            avatar.leftArmGroup = new THREE.Group();
+            avatar.leftArmGroup.position.set(-0.3, 1.9, 0.5);  // Left side, higher position, forward
+            
+            // Left upper arm - slightly thicker
+            const upperArmGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.35, 12);
+            avatar.leftUpperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
+            avatar.leftUpperArm.position.set(0, -0.175, 0);  // Half length down
+            avatar.leftUpperArm.castShadow = true;
+            avatar.leftUpperArm.renderOrder = ARM_RENDER_ORDER;
+            avatar.leftArmGroup.add(avatar.leftUpperArm);
+            
+            // Left forearm - DIRECTLY CONNECTED (child of upper arm)
+            avatar.leftForearm = new THREE.Group();
+            avatar.leftForearm.position.set(0, -0.175, 0);  // At bottom of upper arm (no gap)
+            
+            const leftForearmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.35, 12), armMaterial);
+            leftForearmMesh.position.set(0, -0.175, 0);  // Half length down
+            leftForearmMesh.castShadow = true;
+            leftForearmMesh.renderOrder = ARM_RENDER_ORDER;
+            avatar.leftForearm.add(leftForearmMesh);
+            
+            // Left hand - cube shaped fist
+            avatar.leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), armMaterial);
+            avatar.leftHand.position.set(0, -0.175, 0);  // At bottom of forearm (connected)
+            avatar.leftHand.castShadow = true;
+            avatar.leftHand.renderOrder = ARM_RENDER_ORDER;
+            avatar.leftForearm.add(avatar.leftHand);
+            
+            // Connect forearm to upper arm
+            avatar.leftUpperArm.add(avatar.leftForearm);
+            avatar.group.add(avatar.leftArmGroup);
+            
+            // RIGHT ARM AS ONE CONNECTED OBJECT (mirror of left)
+            avatar.rightArmGroup = new THREE.Group();
+            avatar.rightArmGroup.position.set(0.3, 1.9, 0.5);  // Right side, higher position, forward
+            
+            // Right upper arm
+            avatar.rightUpperArm = new THREE.Mesh(upperArmGeometry.clone(), armMaterial);
+            avatar.rightUpperArm.position.set(0, -0.175, 0);  // Half length down
+            avatar.rightUpperArm.castShadow = true;
+            avatar.rightUpperArm.renderOrder = ARM_RENDER_ORDER;
+            avatar.rightArmGroup.add(avatar.rightUpperArm);
+            
+            // Right forearm - DIRECTLY CONNECTED
+            avatar.rightForearm = new THREE.Group();
+            avatar.rightForearm.position.set(0, -0.175, 0);  // At bottom of upper arm (no gap)
+            
+            const rightForearmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.35, 12), armMaterial);
+            rightForearmMesh.position.set(0, -0.175, 0);  // Half length down
+            rightForearmMesh.castShadow = true;
+            rightForearmMesh.renderOrder = ARM_RENDER_ORDER;
+            avatar.rightForearm.add(rightForearmMesh);
+            
+            // Right hand - cube shaped fist
+            avatar.rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), armMaterial);
+            avatar.rightHand.position.set(0, -0.175, 0);  // At bottom of forearm (connected)
+            avatar.rightHand.castShadow = true;
+            avatar.rightHand.renderOrder = ARM_RENDER_ORDER;
+            avatar.rightForearm.add(avatar.rightHand);
+            
+            // Connect forearm to upper arm
+            avatar.rightUpperArm.add(avatar.rightForearm);
+            avatar.group.add(avatar.rightArmGroup);
+            
+            // Store shoulder references for animations (pointing to arm groups)
+            avatar.shoulderL = avatar.leftArmGroup;
+            avatar.shoulderR = avatar.rightArmGroup;
+            
+            log('Arms created: connected objects, z=0.5 (foreground), render_order=100', 'info');
+        }
+
+        function createLegsAtBottom() {
+            log('Creating legs at bottom...', 'info');
+            
+            // COORDINATE PLANNING:
+            // Torso bottom: y = 0.9
+            // Leg length: 0.8 units total (0.4 thigh + 0.4 shin)
+            // Hip position: y = 0.9 (bottom of torso)
+            // Feet at ground: y = 0.1
+            
+            const legMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x2c3e50,  // Dark pants color
+                metalness: 0.1,
+                roughness: 0.8
+            });
+            
+            const footMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x654321,  // Brown shoes
+                metalness: 0.2,
+                roughness: 0.9
+            });
+            
+            // LEFT LEG
+            avatar.leftLegGroup = new THREE.Group();
+            avatar.leftLegGroup.position.set(-0.12, 0.9, 0);  // Left side of torso bottom
+            
+            // Left thigh
+            const thighGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 12);
+            avatar.leftThigh = new THREE.Mesh(thighGeometry, legMaterial);
+            avatar.leftThigh.position.set(0, -0.2, 0);  // Half length down
+            avatar.leftThigh.castShadow = true;
+            avatar.leftLegGroup.add(avatar.leftThigh);
+            
+            // Left shin - connected to thigh (no gap)
+            avatar.leftShin = new THREE.Group();
+            avatar.leftShin.position.set(0, -0.2, 0);  // At bottom of thigh (no gap)
+            
+            const shinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 12), legMaterial);
+            shinMesh.position.set(0, -0.2, 0);  // Half length down
+            shinMesh.castShadow = true;
+            avatar.leftShin.add(shinMesh);
+            
+            // Left foot
+            avatar.leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.24), footMaterial);
+            avatar.leftFoot.position.set(0, -0.2, 0.08);  // At bottom of shin, slightly forward
+            avatar.leftFoot.castShadow = true;
+            avatar.leftShin.add(avatar.leftFoot);
+            
+            // Connect shin to thigh
+            avatar.leftThigh.add(avatar.leftShin);
+            avatar.group.add(avatar.leftLegGroup);
+            
+            // RIGHT LEG (mirror)
+            avatar.rightLegGroup = new THREE.Group();
+            avatar.rightLegGroup.position.set(0.12, 0.9, 0);  // Right side of torso bottom
+            
+            // Right thigh
+            avatar.rightThigh = new THREE.Mesh(thighGeometry.clone(), legMaterial);
+            avatar.rightThigh.position.set(0, -0.2, 0);  // Half length down
+            avatar.rightThigh.castShadow = true;
+            avatar.rightLegGroup.add(avatar.rightThigh);
+            
+            // Right shin - connected to thigh (no gap)
+            avatar.rightShin = new THREE.Group();
+            avatar.rightShin.position.set(0, -0.2, 0);  // At bottom of thigh (no gap)
+            
+            const rightShinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 12), legMaterial);
+            rightShinMesh.position.set(0, -0.2, 0);  // Half length down
+            rightShinMesh.castShadow = true;
+            avatar.rightShin.add(rightShinMesh);
+            
+            // Right foot
+            avatar.rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.24), footMaterial);
+            avatar.rightFoot.position.set(0, -0.2, 0.08);  // At bottom of shin, slightly forward
+            avatar.rightFoot.castShadow = true;
+            avatar.rightShin.add(avatar.rightFoot);
+            
+            // Connect shin to thigh
+            avatar.rightThigh.add(avatar.rightShin);
+            avatar.group.add(avatar.rightLegGroup);
+            
+            // Store leg references for animations
+            avatar.leftLeg = avatar.leftLegGroup;
+            avatar.rightLeg = avatar.rightLegGroup;
+            avatar.hipL = avatar.leftLegGroup;
+            avatar.hipR = avatar.rightLegGroup;
+            
+            log('Legs created: positioned at torso bottom, feet near ground level', 'info');
+        }
+
+        function createGround() {
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x98FB98,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -1.2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+
+        // =====================
+        // ANIMATION SYSTEM
+        // =====================
+        function performAction(actionType) {
+            log(`3D Action triggered: ${actionType}`, 'info');
+            
+            try {
+                clearCurrentAction();
+                currentAction = actionType;
+                
+                updateStatus(`Performing 3D: ${actionType}`);
+                
+                // Call specific animation function
+                switch(actionType) {
+                    case 'wave': animateWave(); break;
+                    case 'cough': animateCough(); break;
+                    case 'headache': animateHeadache(); break;
+                    case 'itch': animateItch(); break;
+                    case 'fever': animateFever(); break;
+                    case 'stomach': animateStomach(); break;
+                    case 'leg': animateLeg(); break;
+                    case 'dizzy': animateDizzy(); break;
+                    case 'sneeze': animateSneeze(); break;
+                    case 'nausea': animateNausea(); break;
+                    case 'blood': animateBlood(); break;
+                    case 'chest': animateChest(); break;
+                    default: log(`Unknown action: ${actionType}`, 'error');
+                }
+                
+                // Auto-clear after 5 seconds
+                actionTimeout = setTimeout(() => {
+                    clearCurrentAction();
+                }, 5000);
+                
+            } catch (error) {
+                log(`ERROR in 3D action: ${error.message}`, 'error');
+            }
+        }
+
+        function clearCurrentAction() {
+            if (currentAction) {
+                log(`Clearing 3D action: ${currentAction}`, 'info');
+                
+                // Reset all materials to default colors
+                resetColors();
+                
+                // Reset all rotations and positions
+                resetPoses();
+                
+                // Clear particles
+                clearParticles();
+                
+                currentAction = null;
+                updateStatus('Ready for next 3D action');
+                
+                if (actionTimeout) {
+                    clearTimeout(actionTimeout);
+                    actionTimeout = null;
+                }
+            }
+        }
+
+        function resetColors() {
+            // Reset all colors to defaults
+            const lightSkin = 0xffe8d1;  // Much lighter skin tone for 3D rendering
+            const bodyBlue = 0x4a90e2;
+            
+            if (avatar.headMesh) avatar.headMesh.material.color.setHex(lightSkin);
+            if (avatar.nose) avatar.nose.material.color.setHex(lightSkin);
+            if (avatar.torsoMesh) avatar.torsoMesh.material.color.setHex(bodyBlue);
+            if (avatar.leftHand) avatar.leftHand.material.color.setHex(lightSkin);
+            if (avatar.rightHand) avatar.rightHand.material.color.setHex(lightSkin);
+            if (avatar.leftUpperArm) avatar.leftUpperArm.material.color.setHex(lightSkin);
+            if (avatar.rightUpperArm) avatar.rightUpperArm.material.color.setHex(lightSkin);
+            
+            // Reset forehead to transparent
+            if (avatar.forehead) {
+                avatar.forehead.material.opacity = 0.0;
+                avatar.forehead.material.emissiveIntensity = 0.0;
+            }
+            
+            // Reset pain lines to transparent
+            if (avatar.painLines) {
+                avatar.painLines.forEach(line => {
+                    line.material.opacity = 0.0;
+                });
+            }
+            
+            // Reset chest indicator to transparent
+            if (avatar.chestIndicator) {
+                avatar.chestIndicator.material.opacity = 0.0;
+                avatar.chestIndicator.material.emissiveIntensity = 0.0;
+            }
+            
+            // Reset stomach indicator to transparent
+            if (avatar.stomachIndicator) {
+                avatar.stomachIndicator.material.opacity = 0.0;
+                avatar.stomachIndicator.material.emissiveIntensity = 0.0;
+            }
+        }
+
+        function resetPoses() {
+            // Reset head position and rotation
+            if (avatar.head) {
+                avatar.head.rotation.set(0, 0, 0);
+                avatar.head.position.set(0, 2.5, 0);
+            }
+            
+            // Reset arm groups (shoulders)
+            if (avatar.leftArmGroup) {
+                avatar.leftArmGroup.rotation.set(0, 0, 0);
+                if (avatar.leftForearm) avatar.leftForearm.rotation.set(0, 0, 0);
+            }
+            if (avatar.rightArmGroup) {
+                avatar.rightArmGroup.rotation.set(0, 0, 0);
+                if (avatar.rightForearm) avatar.rightForearm.rotation.set(0, 0, 0);
+            }
+            
+            // Reset leg groups
+            if (avatar.leftLegGroup) {
+                avatar.leftLegGroup.rotation.set(0, 0, 0);
+                if (avatar.leftShin) avatar.leftShin.rotation.set(0, 0, 0);
+            }
+            if (avatar.rightLegGroup) {
+                avatar.rightLegGroup.rotation.set(0, 0, 0);
+                if (avatar.rightShin) avatar.rightShin.rotation.set(0, 0, 0);
+            }
+            
+            // Reset avatar group floating animation
+            if (avatar.group) {
+                avatar.group.rotation.set(0, 0, 0);
+                avatar.group.position.set(0, 0, 0);
+            }
+        }
+
+        // =====================
+        // INDIVIDUAL ANIMATIONS
+        // =====================
+        function animateWave() {
+            log('Starting wave animation', 'info');
+            
+            function waveStep() {
+                if (!currentAction || currentAction !== 'wave') return;
+                
+                const time = Date.now() * 0.001;
+                const freq = 6;
+                
+                if (avatar.shoulderR) {
+                    avatar.shoulderR.rotation.z = Math.sin(time * freq) * 0.8;
+                    avatar.shoulderR.rotation.x = -0.6; // Base position
+                }
+                
+                requestAnimationFrame(waveStep);
+            }
+            waveStep();
+        }
+
+        function animateCough() {
+            log('Starting slower cough animation with mouth droplets', 'info');
+            
+            // Slower mouth animation only
+            let coughCount = 0;
+            const maxCoughs = 3;  // Fewer coughs for slower animation
+            let particleCount = 0;
+            const maxParticles = 2;  // Only 2 particle bursts during animation
+            
+            function coughStep() {
+                if (!currentAction || currentAction !== 'cough' || coughCount >= maxCoughs) return;
+                
+                const time = Date.now() * 0.008;  // Much slower timing
+                
+                // Head motion similar to nausea but with less forward tilt
+                if (avatar.head) {
+                    avatar.head.rotation.x = 0.1 + Math.sin(time * 3) * 0.05;  // Less forward base + oscillation
+                    avatar.head.position.z = Math.sin(time * 2) * 0.05;        // Forward/back position movement (less than nausea)
+                }
+                
+                // Mouth expansion
+                if (avatar.mouth) {
+                    const scale = 1 + Math.sin(time * 2) * 0.4;  // Slower, more pronounced
+                    avatar.mouth.scale.set(scale, scale, scale);
+                }
+                
+                // Count cough cycles and trigger particles
+                if (Math.sin(time * 2) > 0.8) {
+                    coughCount++;
+                    // Only create particles twice during the animation
+                    if (particleCount < maxParticles && coughCount % 2 === 1) {
+                        createCoughParticles();
+                        particleCount++;
+                    }
+                }
+                
+                requestAnimationFrame(coughStep);
+            }
+            coughStep();
+        }
+
+        function animateHeadache() {
+            log('Starting headache animation with forehead and pain lines blinking', 'info');
+            
+            function headacheStep() {
+                if (!currentAction || currentAction !== 'headache') return;
+                
+                const time = Date.now() * 0.002;  // Slower animation
+                
+                // Forehead blinking red effect (no head movement)
+                if (avatar.forehead) {
+                    const blinkIntensity = Math.abs(Math.sin(time * 2)) * 0.8; // Slower blinking
+                    avatar.forehead.material.opacity = blinkIntensity;
+                    avatar.forehead.material.emissiveIntensity = blinkIntensity * 0.5;
+                }
+                
+                // Pain lines blinking effect
+                if (avatar.painLines) {
+                    const lineBlinkIntensity = Math.abs(Math.sin(time * 2.5)) * 0.9; // Slower, slightly different timing
+                    avatar.painLines.forEach(line => {
+                        line.material.opacity = lineBlinkIntensity;
+                    });
+                }
+                
+                requestAnimationFrame(headacheStep);
+            }
+            headacheStep();
+        }
+
+        function animateItch() {
+            log('Starting itch animation (higher arm, slower shake)', 'info');
+            
+            function itchStep() {
+                if (!currentAction || currentAction !== 'itch') return;
+                
+                const time = Date.now() * 0.012;  // Slower overall timing (was 0.02)
+                
+                // Left arm scratching motion (higher position, less fast shaking)
+                if (avatar.shoulderL) {
+                    avatar.shoulderL.rotation.z = 0.8 + Math.sin(time * 2) * 0.3;      // Higher arm (0.8 vs 0.5) + slower shake (2 vs 3)
+                    avatar.shoulderL.rotation.x = -0.4 + Math.sin(time * 1.8) * 0.15;   // Higher position (-0.4 vs -0.2) + slower (1.8 vs 2.5)
+                    avatar.leftForearm.rotation.x = -1.1 + Math.sin(time * 2.5) * 0.25; // Higher forearm (-1.1 vs -0.8) + slower (2.5 vs 4)
+                }
+                
+                requestAnimationFrame(itchStep);
+            }
+            itchStep();
+        }
+
+        function animateFever() {
+            log('Starting fever animation with redder color', 'info');
+            
+            // Change colors to much more red/hot
+            if (avatar.headMesh) avatar.headMesh.material.color.setHex(0xff6666);  // More red (was 0xffaaaa)
+            if (avatar.leftHand) avatar.leftHand.material.color.setHex(0xff6666);   // More red
+            if (avatar.rightHand) avatar.rightHand.material.color.setHex(0xff6666); // More red
+            
+            // Add thermometer
+            createThermometer();
+            
+            function feverStep() {
+                if (!currentAction || currentAction !== 'fever') return;
+                
+                const time = Date.now() * 0.01;
+                
+                // Gentle swaying
+                if (avatar.group) {
+                    avatar.group.rotation.z = Math.sin(time) * 0.05;
+                }
+                
+                // Glow effect
+                const intensity = 0.8 + Math.sin(time * 2) * 0.2;
+                if (avatar.headMesh) avatar.headMesh.material.emissive.setRGB(0.1 * intensity, 0, 0);
+                
+                requestAnimationFrame(feverStep);
+            }
+            feverStep();
+        }
+
+        function animateStomach() {
+            log('Starting stomach animation', 'info');
+            
+            function stomachStep() {
+                if (!currentAction || currentAction !== 'stomach') return;
+                
+                const time = Date.now() * 0.003;  // Slower timing for better visibility
+                
+                // Green blinking stomach indicator
+                if (avatar.stomachIndicator) {
+                    const blinkIntensity = Math.abs(Math.sin(time * 2)) * 0.8;
+                    avatar.stomachIndicator.material.opacity = blinkIntensity;
+                    avatar.stomachIndicator.material.emissiveIntensity = blinkIntensity * 0.6;
+                }
+                
+                // Arms cross over stomach
+                if (avatar.shoulderL) {
+                    avatar.shoulderL.rotation.z = 0.3;
+                    avatar.shoulderL.rotation.y = -0.5;
+                    avatar.leftForearm.rotation.x = -0.8;
+                }
+                if (avatar.shoulderR) {
+                    avatar.shoulderR.rotation.z = -0.3;
+                    avatar.shoulderR.rotation.y = 0.5;
+                    avatar.rightForearm.rotation.x = -0.8;
+                }
+                
+                // Stomach pulsing
+                if (avatar.stomach) {
+                    const scale = 1 + Math.sin(time * 3) * 0.1;
+                    avatar.stomach.scale.set(scale, 1, scale);
+                }
+                
+                requestAnimationFrame(stomachStep);
+            }
+            stomachStep();
+        }
+
+        function animateLeg() {
+            log('Starting leg animation (slower movement)', 'info');
+            
+            function legStep() {
+                if (!currentAction || currentAction !== 'leg') return;
+                
+                const time = Date.now() * 0.005;  // Much slower - reduced from 0.02 to 0.005
+                
+                // Left leg movement (slower, more natural)
+                if (avatar.leftLeg) {
+                    avatar.leftLeg.rotation.x = Math.sin(time * 2) * 0.3;
+                    avatar.leftShin.rotation.x = Math.max(0, Math.sin(time * 2) * 0.5);
+                }
+                
+                requestAnimationFrame(legStep);
+            }
+            legStep();
+        }
+
+        function animateDizzy() {
+            log('Starting dizzy animation', 'info');
+            
+            // Add spinning stars
+            createDizzyStars();
+            
+            function dizzyStep() {
+                if (!currentAction || currentAction !== 'dizzy') return;
+                
+                const time = Date.now() * 0.008;
+                
+                // Head swaying
+                if (avatar.head) {
+                    avatar.head.rotation.z = Math.sin(time * 1.5) * 0.2;
+                    avatar.head.rotation.x = Math.sin(time * 1.2) * 0.1;
+                }
+                
+                // Body swaying
+                if (avatar.group) {
+                    avatar.group.rotation.z = Math.sin(time) * 0.08;
+                }
+                
+                requestAnimationFrame(dizzyStep);
+            }
+            dizzyStep();
+        }
+
+        function animateSneeze() {
+            log('Starting sneeze animation', 'info');
+            
+            // CRITICAL: Create separate nose material to avoid face color conflict
+            if (avatar.nose && avatar.headMesh) {
+                // Ensure face keeps its own material
+                avatar.headMesh.material.color.setHex(0xffe8d1);  // Keep face normal
+                
+                // Create completely separate material for nose to avoid shared references
+                const redNoseMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xff0000,  // Bright red
+                    metalness: 0.0, 
+                    roughness: 0.9,
+                    emissive: 0x221108  // Same lighting as skin
+                });
+                avatar.nose.material = redNoseMaterial;  // Assign new material
+                log('Nose material separated and changed to red', 'info');
+            }
+            
+            let sneezeCount = 0;
+            const maxSneezes = 3;
+            let sneezePhase = 'buildup';  // Track animation phase
+            
+            function sneezeStep() {
+                if (!currentAction || currentAction !== 'sneeze' || sneezeCount >= maxSneezes) return;
+                
+                const time = Date.now() * 0.004;  // Slower for better timing control
+                
+                if (sneezePhase === 'buildup') {
+                    // PHASE 1: Move face up first with backward tilt (buildup)
+                    if (avatar.head) {
+                        avatar.head.position.y = 2.5 + Math.min(time * 0.05, 0.15);  // Gradual move up to final position
+                        avatar.head.rotation.x = -Math.min(time * 0.02, 0.15);  // Gradual backward tilt (negative for backward)
+                    }
+                    
+                    // Switch to sneeze phase after buildup
+                    if (time > 3) {  // After 3 seconds of buildup
+                        sneezePhase = 'sneeze';
+                    }
+                } else if (sneezePhase === 'sneeze') {
+                    // PHASE 2: Do sneeze action from elevated position with backward tilt
+                    const sneezeTime = (Date.now() * 0.008) - 3;  // Reset timing for sneeze phase
+                    
+                    if (avatar.head) {
+                        // Stay at elevated position with sneeze motion
+                        avatar.head.position.y = 2.65 + Math.sin(sneezeTime * 3) * 0.05;  // Sneeze from up position
+                        avatar.head.rotation.x = -0.15 + Math.sin(sneezeTime * 3) * -0.1;   // Backward tilt with sneeze motion
+                    }
+                    
+                    // Count sneeze cycles
+                    if (Math.sin(sneezeTime * 3) > 0.8) {
+                        sneezeCount++;
+                    }
+                }
+                
+                requestAnimationFrame(sneezeStep);
+            }
+            sneezeStep();
+            
+            // Add sneeze particles earlier in buildup phase
+            setTimeout(() => {
+                if (currentAction === 'sneeze') {
+                    createSneezeParticles();
+                }
+            }, 1000);  // Earlier particles - 1 second instead of 2 seconds
+        }
+
+        function animateNausea() {
+            log('Starting nausea animation', 'info');
+            
+            let nauseaCount = 0;
+            const maxNausea = 3;  // Reduced from ~5 to 3 cycles
+            let vomitCount = 0;
+            const maxVomit = 2;   // Only 2 vomit effects
+            
+            function nauseaStep() {
+                if (!currentAction || currentAction !== 'nausea' || nauseaCount >= maxNausea) return;
+                
+                const time = Date.now() * 0.005;
+                
+                // Head forward motion
+                if (avatar.head) {
+                    avatar.head.rotation.x = 0.3 + Math.sin(time * 3) * 0.1;
+                    avatar.head.position.z = Math.sin(time * 2) * 0.1;
+                }
+                
+                // Count nausea cycles and trigger vomit
+                if (Math.sin(time * 3) > 0.9) {
+                    nauseaCount++;
+                    // Only vomit twice during the animation
+                    if (vomitCount < maxVomit && nauseaCount % 2 === 0) {
+                        createVomitEffect();
+                        vomitCount++;
+                    }
+                }
+                
+                requestAnimationFrame(nauseaStep);
+            }
+            nauseaStep();
+        }
+
+        function animateBlood() {
+            log('Starting blood animation', 'info');
+            
+            // Create blood drops
+            createBloodDrops();
+            
+            function bloodStep() {
+                if (!currentAction || currentAction !== 'blood') return;
+                
+                const time = Date.now() * 0.01;
+                
+                // Weak posture
+                if (avatar.group) {
+                    avatar.group.rotation.z = Math.sin(time) * 0.05;
+                }
+                
+                requestAnimationFrame(bloodStep);
+            }
+            bloodStep();
+        }
+
+        function animateChest() {
+            log('Starting chest animation', 'info');
+            
+            function chestStep() {
+                if (!currentAction || currentAction !== 'chest') return;
+                
+                const time = Date.now() * 0.003;  // Slower timing for better visibility
+                
+                // Chest expansion/breathing difficulty
+                if (avatar.chest) {
+                    const scale = 1 + Math.sin(time * 3) * 0.15;
+                    avatar.chest.scale.set(scale, 1, scale);
+                }
+                
+                // Red blinking chest indicator
+                if (avatar.chestIndicator) {
+                    const blinkIntensity = Math.abs(Math.sin(time * 2.5)) * 0.8;
+                    avatar.chestIndicator.material.opacity = blinkIntensity;
+                    avatar.chestIndicator.material.emissiveIntensity = blinkIntensity * 0.6;
+                }
+                
+                // Hand to chest
+                if (avatar.shoulderR) {
+                    avatar.shoulderR.rotation.z = -0.5;
+                    avatar.shoulderR.rotation.x = 0.3;
+                    avatar.rightForearm.rotation.x = -0.8;
+                }
+                
+                requestAnimationFrame(chestStep);
+            }
+            chestStep();
+        }
+
+        // =====================
+        // PARTICLE EFFECTS
+        // =====================
+        function createCoughParticles() {
+            // Get mouth position for accurate droplet placement
+            const mouthWorldPos = new THREE.Vector3();
+            if (avatar.mouth) {
+                avatar.mouth.getWorldPosition(mouthWorldPos);
+            } else {
+                // Fallback to approximate mouth position
+                mouthWorldPos.set(0, 2.32, 0.36);  // Head center + mouth offset
+            }
+            
+            for (let i = 0; i < 8; i++) {  // Fewer particles for cleaner effect
+                const geometry = new THREE.SphereGeometry(0.025, 8, 8);  // Slightly bigger droplets
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                // Position droplets near mouth with small random spread
+                particle.position.set(
+                    mouthWorldPos.x + (Math.random() - 0.5) * 0.1,  // Small horizontal spread
+                    mouthWorldPos.y + (Math.random() - 0.5) * 0.05,  // Small vertical spread  
+                    mouthWorldPos.z + Math.random() * 0.05  // Slightly forward from mouth
+                );
+                
+                // Velocity pointing outward from mouth
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.015,  // Slower horizontal movement
+                    (Math.random() - 0.3) * 0.008,  // Slight downward bias
+                    Math.random() * 0.015 + 0.008   // Forward from mouth
+                );
+                
+                particle.life = 120;  // Longer life for slower movement
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function createSneezeParticles() {
+            // Get nose position for accurate droplet placement
+            const noseWorldPos = new THREE.Vector3();
+            if (avatar.nose) {
+                avatar.nose.getWorldPosition(noseWorldPos);
+            } else {
+                noseWorldPos.set(0, 2.48, 0.36);  // Fallback nose position
+            }
+            
+            for (let i = 0; i < 15; i++) {
+                const geometry = new THREE.SphereGeometry(0.015, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xccccff,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                // Position particles close to actual nose location
+                particle.position.set(
+                    noseWorldPos.x + (Math.random() - 0.5) * 0.08,  // Close horizontal spread around nose
+                    noseWorldPos.y + (Math.random() - 0.5) * 0.03,  // Very close to nose height
+                    noseWorldPos.z + Math.random() * 0.05           // Just in front of nose
+                );
+                
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.03,
+                    Math.random() * 0.015 + 0.005,
+                    Math.random() * 0.025 + 0.015
+                );
+                
+                particle.life = 80;
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function createVomitEffect() {
+            // Get mouth position for accurate droplet origin
+            const mouthWorldPos = new THREE.Vector3();
+            if (avatar.mouth) {
+                avatar.mouth.getWorldPosition(mouthWorldPos);
+            } else {
+                mouthWorldPos.set(0, 2.32, 0.36);  // Fallback mouth position
+            }
+            
+            for (let i = 0; i < 12; i++) {  // More droplets for drool effect
+                const geometry = new THREE.SphereGeometry(0.05, 8, 8);  // Thicker droplets
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0x90EE90,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                // Position droplets close together near mouth
+                particle.position.set(
+                    mouthWorldPos.x + (Math.random() - 0.5) * 0.05,  // Much closer horizontal spread
+                    mouthWorldPos.y + (Math.random() - 0.5) * 0.02,  // Very close to mouth height
+                    mouthWorldPos.z + Math.random() * 0.02           // Just in front of mouth
+                );
+                
+                // Drool-like downward movement with minimal horizontal spread
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.005,  // Very minimal horizontal movement
+                    -Math.random() * 0.015 - 0.02,  // Strong downward movement
+                    Math.random() * 0.003           // Minimal forward movement
+                );
+                
+                particle.life = 180;  // Longer life for drool effect
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function createBloodDrops() {
+            for (let i = 0; i < 5; i++) {
+                const geometry = new THREE.SphereGeometry(0.02, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0x8B0000,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.set(
+                    0.6 + Math.random() * 0.1,
+                    2.0 + Math.random() * 0.5,
+                    Math.random() * 0.1
+                );
+                
+                particle.velocity = new THREE.Vector3(
+                    0,
+                    -Math.random() * 0.02 - 0.01,
+                    0
+                );
+                
+                particle.life = 150;
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function createDizzyStars() {
+            for (let i = 0; i < 3; i++) {
+                // Create star shape geometry
+                const starShape = new THREE.Shape();
+                const outerRadius = 0.08;
+                const innerRadius = 0.03;
+                const spikes = 5;
+                
+                for (let j = 0; j < spikes * 2; j++) {
+                    const angle = (j / (spikes * 2)) * Math.PI * 2;
+                    const radius = j % 2 === 0 ? outerRadius : innerRadius;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    
+                    if (j === 0) {
+                        starShape.moveTo(x, y);
+                    } else {
+                        starShape.lineTo(x, y);
+                    }
+                }
+                starShape.closePath();
+                
+                // Extrude the star shape to give it thickness
+                const extrudeSettings = {
+                    depth: 0.02,
+                    bevelEnabled: false
+                };
+                const geometry = new THREE.ExtrudeGeometry(starShape, extrudeSettings);
+                
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xffff00,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const star = new THREE.Mesh(geometry, material);
+                
+                const angle = (i / 3) * Math.PI * 2;
+                star.position.set(
+                    Math.cos(angle) * 0.8,
+                    3.8,
+                    Math.sin(angle) * 0.8
+                );
+                
+                // Rotate star to face camera better
+                star.rotation.z = Math.random() * Math.PI * 2;  // Random rotation for variety
+                
+                star.velocity = { angle: angle, speed: 0.02 };
+                star.life = 250;
+                scene.add(star);
+                particles.push(star);
+            }
+        }
+
+        function createThermometer() {
+            // Get mouth position for accurate thermometer placement
+            const mouthWorldPos = new THREE.Vector3();
+            if (avatar.mouth) {
+                avatar.mouth.getWorldPosition(mouthWorldPos);
+            } else {
+                mouthWorldPos.set(0, 2.32, 0.36);  // Fallback mouth position
+            }
+            
+            // Create thermometer group for red and white parts
+            const thermometerGroup = new THREE.Group();
+            
+            // White body of thermometer
+            const bodyGeometry = new THREE.CylinderGeometry(0.012, 0.012, 0.18, 8);
+            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const thermometerBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            thermometerBody.position.set(0, 0.01, 0);  // Slightly offset up
+            thermometerGroup.add(thermometerBody);
+            
+            // Red tip of thermometer
+            const tipGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.04, 8);
+            const tipMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const thermometerTip = new THREE.Mesh(tipGeometry, tipMaterial);
+            thermometerTip.position.set(0, -0.08, 0);  // At bottom of thermometer
+            thermometerGroup.add(thermometerTip);
+            
+            // Position close to mouth
+            thermometerGroup.position.set(
+                mouthWorldPos.x + 0.08,  // Slightly to the right of mouth
+                mouthWorldPos.y - 0.02,  // Slightly below mouth level
+                mouthWorldPos.z + 0.05   // Just in front of mouth
+            );
+            thermometerGroup.rotation.z = Math.PI / 8;  // Slight angle
+            
+            scene.add(thermometerGroup);
+            particles.push(thermometerGroup);
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                
+                if (particle.velocity) {
+                    if (particle.velocity.angle !== undefined) {
+                        // Dizzy stars
+                        particle.velocity.angle += particle.velocity.speed;
+                        particle.position.x = Math.cos(particle.velocity.angle) * 0.8;
+                        particle.position.z = Math.sin(particle.velocity.angle) * 0.8;
+                    } else {
+                        // Regular particles
+                        particle.position.add(particle.velocity);
+                        particle.velocity.y -= 0.0005; // Gravity
+                    }
+                }
+                
+                if (particle.life !== undefined) {
+                    particle.life--;
+                    particle.material.opacity = particle.life / 100;
+                    
+                    if (particle.life <= 0) {
+                        scene.remove(particle);
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function clearParticles() {
+            particles.forEach(particle => {
+                scene.remove(particle);
+            });
+            particles = [];
+        }
+
+        // =====================
+        // VIEW CONTROLS
+        // =====================
+        function setView(viewType) {
+            log(`Setting view to: ${viewType}`, 'info');
+            
+            const distance = 5;
+            const height = 2;
+            
+            switch(viewType) {
+                case 'front':
+                    camera.position.set(0, height, distance);
+                    break;
+                case 'back':
+                    camera.position.set(0, height, -distance);
+                    break;
+                case 'left':
+                    camera.position.set(-distance, height, 0);
+                    break;
+                case 'right':
+                    camera.position.set(distance, height, 0);
+                    break;
+                case 'reset':
+                    camera.position.set(0, height, distance);
+                    break;
+            }
+            
+            camera.lookAt(0, 1.5, 0);
+        }
+
+        // =====================
+        // ANIMATION LOOP
+        // =====================
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            // Update controls properly
+            if (controls && controls.update) {
+                controls.update();
+            } else if (window.updateControls) {
+                window.updateControls();
+            }
+            
+            // Update particles
+            updateParticles();
+            
+            // Gentle floating animation for avatar
+            if (avatar.group && !currentAction) {
+                const time = Date.now() * 0.001;
+                avatar.group.position.y = Math.sin(time) * 0.05;
+            }
+            
+            // Update FPS counter
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime - lastTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                document.getElementById('fpsCounter').textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+            
+            // Render
+            renderer.render(scene, camera);
+        }
+
+        // =====================
+        // WINDOW RESIZE
+        // =====================
+        function onWindowResize() {
+            const container = document.getElementById('threejs-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Keyboard shortcuts removed for cleaner implementation
+
+        // =====================
+        // INITIALIZATION
+        // =====================
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Initializing 3D Medical Avatar System...', 'info');
+            
+            // Check if Three.js is available
+            if (typeof THREE === 'undefined') {
+                log('ERROR: Three.js library not loaded!', 'error');
+                updateStatus('Error: Three.js not loaded');
+                return;
+            } else {
+                log('Three.js library loaded successfully', 'success');
+            }
+            
+            try {
+                initThreeJS();
+                setupLighting();
+                setupControls();
+                createAvatar();
+                
+                // Start animation loop
+                animate();
+                
+                // Setup resize handler
+                window.addEventListener('resize', onWindowResize);
+                
+                updateStatus('3D Avatar System Ready');
+                log('3D Medical Avatar System fully initialized!', 'success');
+                
+            } catch (error) {
+                log(`Initialization error: ${error.message}`, 'error');
+                console.error('3D Avatar initialization failed:', error);
+                updateStatus(`Error: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

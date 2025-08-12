@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease List - Medical Patient Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .info-box {
+            background: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .info-box h3 {
+            color: #2980b9;
+            margin-top: 0;
+        }
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .info-box li {
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        .diseases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .disease-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+        }
+        .disease-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .disease-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+        .disease-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        .symptom-count {
+            background: #e8f5e8;
+            color: #27ae60;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            border: 1px solid #a8e6cf;
+        }
+        .symptoms-section {
+            flex-grow: 1;
+            margin-bottom: 10px;
+        }
+        .symptoms-title {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .symptoms-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+        .symptom-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            border: 1px solid #bbdefb;
+            white-space: nowrap;
+        }
+        .disease-count {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.8em;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .back-btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        .back-btn:hover {
+            background: #2980b9;
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .highlight h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .highlight p {
+            color: #856404;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="text-align: left; margin-bottom: 20px;">
+            <a href="javascript:history.back()" class="back-btn" style="margin: 0; font-size: 0.9em; padding: 8px 16px;">← Back</a>
+        </div>
+        
+        <h1>🏥 Available Diseases</h1>
+        <p class="subtitle">Medical Patient Simulator - Disease Reference Guide</p>
+        
+        <div class="info-box">
+            <h3>📋 How to Use This List</h3>
+            <ul>
+                <li><strong>Study these diseases</strong> before starting your simulation</li>
+                <li><strong>Use exact disease names</strong> when making diagnoses</li>
+                <li><strong>Don't guess or use technical terms</strong> - stick to the list</li>
+                <li><strong>Focus on symptoms</strong> rather than medical jargon</li>
+                <li><strong>Data source:</strong> All disease information is taken from the NHS dataset</li>
+            </ul>
+        </div>
+        
+        <div class="highlight">
+            <h4>💡 Pro Tip</h4>
+            <p><strong>Always use the exact disease names from this list.</strong></p>
+            <p>Instead of saying "chest issues" or "breathing problems", say the specific disease name like "Asthma" or "Pneumonia".</p>
+        </div>
+        
+        <div class="diseases-grid">
+            {% for disease in diseases %}
+            <div class="disease-card">
+                <div class="disease-name">{{ disease.name }}</div>
+                <div class="disease-meta">
+                    <span class="symptom-count">{{ disease.symptoms|length }} symptoms</span>
+                </div>
+                <div class="symptoms-section">
+                    <div class="symptoms-title">Key Symptoms:</div>
+                    <ul class="symptoms-list">
+                        {% for symptom in disease.symptoms %}
+                        <li><span class="symptom-tag">{{ symptom }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="disease-count">Available for simulation</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="javascript:history.back()" class="back-btn">← Back to Previous Page</a>
+        </div>
+    </div>
+</body>
+</html>

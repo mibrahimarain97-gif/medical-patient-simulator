@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive 3D Character Animation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            column-gap: 12px;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* Left side - Controls and Logs (360px fixed) */
+        .control-panel {
+            grid-column: 1;
+            width: 360px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .action-btn:active {
+            transform: translateY(1px);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+        
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            height: 200px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.success {
+            color: #00ff00;
+        }
+        
+        .log-entry.error {
+            color: #ff4444;
+        }
+        
+        .log-entry.info {
+            color: #44aaff;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        /* Right side - 3D Character Display */
+        .character-panel {
+            grid-column: 2;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .canvas-pane {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #threeContainer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .status-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        .badge {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            z-index: 100;
+        }
+        
+        .debug-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8em;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>🎭 Character Actions</h3>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="performAction('wave')">👋 Wave</button>
+                    <button class="action-btn" onclick="performAction('cough')">😷 Cough</button>
+                    <button class="action-btn" onclick="performAction('headache')">🤕 Headache</button>
+                    <button class="action-btn" onclick="performAction('itch')">🤏 Itch</button>
+                    <button class="action-btn" onclick="performAction('fever')">🤒 Fever</button>
+                    <button class="action-btn" onclick="performAction('stomach')">🤱 Stomach</button>
+                    <button class="action-btn" onclick="performAction('leg')">🦵 Leg</button>
+                    <button class="action-btn" onclick="performAction('dizzy')">😵 Dizzy</button>
+                    <button class="action-btn" onclick="performAction('sneeze')">🤧 Sneeze</button>
+                    <button class="action-btn" onclick="performAction('nausea')">🤢 Nausea</button>
+                    <button class="action-btn" onclick="performAction('blood')">🩸 Blood</button>
+                    <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h3>🔧 Controls</h3>
+                <button class="action-btn" onclick="runDiagnostics()" style="background: linear-gradient(45deg, #3498db, #2980b9); width: 100%; margin-bottom: 10px;">
+                    🔍 Run Diagnostics
+                </button>
+                <button class="action-btn" onclick="clearCurrentAction()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); width: 100%;">
+                    ⏹️ Clear Action
+                </button>
+            </div>
+            
+            <div class="control-section">
+                <h3>📝 Action Log</h3>
+                <div class="log-container" id="actionLog">
+                    <div class="log-entry info">[SYSTEM] 3D Character initialized</div>
+                </div>
+                <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+            </div>
+            
+            <div class="control-section">
+                <h3>⌨️ Keyboard Shortcuts</h3>
+                <div style="font-size: 0.85em; color: #666; line-height: 1.4;">
+                    <strong>Actions:</strong><br>
+                    1=Wave, 2=Cough, 3=Headache, 4=Itch<br>
+                    5=Fever, 6=Stomach, 7=Leg, 8=Dizzy<br>
+                    9=Sneeze, Q=Nausea, W=Blood, E=Chest<br><br>
+                    <strong>Controls:</strong><br>
+                    C=Clear Action, D=Diagnostics<br>
+                    Space=Clear Log
+                </div>
+            </div>
+        </div>
+        
+        <div class="character-panel">
+            <div class="canvas-pane">
+                <div class="status-display" id="statusDisplay">Initializing comprehensive 3D character...</div>
+                <div class="badge">Left: rotate • Right: pan • Wheel: zoom</div>
+                <div class="debug-info" id="debugInfo">FPS: --</div>
+                <div id="threeContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/vendor/three/three.min.js"></script>
+    <script src="/static/vendor/three/OrbitControls.js"></script>
+    
+    <script>
+        // Global variables
+        let scene, camera, renderer, controls, clock;
+        let character = null;
+        let currentAction = null;
+        let actionTimeout = null;
+        let animationMixer = null;
+        let frameCount = 0;
+        let lastTime = 0;
+        
+        // Character components for detailed control
+        let characterParts = {};
+        
+        // Logging and status
+        function log(msg, type = 'info') {
+            const el = document.getElementById('actionLog');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.textContent = `[${time}] ${msg}`;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+            console[type === 'error' ? 'error' : 'log'](`${type.toUpperCase()}: ${msg}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('actionLog').innerHTML = '<div class="log-entry info">[SYSTEM] Log cleared</div>';
+        }
+        
+        function updateStatus(status) {
+            const el = document.getElementById('statusDisplay');
+            if (el) el.textContent = status;
+            log(`Status: ${status}`, 'info');
+        }
+        
+        function updateDebugInfo() {
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                const fps = Math.round(frameCount * 1000 / (now - lastTime));
+                const debugEl = document.getElementById('debugInfo');
+                if (debugEl) {
+                    debugEl.textContent = `FPS: ${fps} | Actions: ${currentAction || 'none'}`;
+                }
+                frameCount = 0;
+                lastTime = now;
+            }
+            frameCount++;
+        }
+        
+        // Initialize Three.js
+        function initThree() {
+            const container = document.getElementById('threeContainer');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+            
+            // Camera setup - positioned for full character view
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 2.2, 5);
+            
+            // Renderer setup with high quality
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            renderer.physicallyCorrectLights = true;
+            container.appendChild(renderer.domElement);
+            
+            // Lighting setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+            hemisphereLight.position.set(0, 20, 0);
+            scene.add(hemisphereLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 50;
+            directionalLight.shadow.camera.left = -10;
+            directionalLight.shadow.camera.right = 10;
+            directionalLight.shadow.camera.top = 10;
+            directionalLight.shadow.camera.bottom = -10;
+            scene.add(directionalLight);
+            
+            // Ground plane
+            const groundGeometry = new THREE.PlaneGeometry(30, 30);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x98FB98 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Controls
+            if (THREE.OrbitControls) {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.target.set(0, 1.8, 0);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.maxPolarAngle = Math.PI * 0.75;
+                controls.minDistance = 3;
+                controls.maxDistance = 15;
+                controls.update();
+                log('OrbitControls initialized', 'success');
+            } else {
+                log('OrbitControls not available; using fixed camera', 'error');
+            }
+            
+            // Clock for animations
+            clock = new THREE.Clock();
+            
+            // Build the character
+            buildComprehensiveCharacter();
+            
+            // Start animation loop
+            animate();
+            
+            // Resize handling
+            window.addEventListener('resize', onResize);
+            if (window.ResizeObserver) {
+                const resizeObserver = new ResizeObserver(() => onResize());
+                resizeObserver.observe(container);
+            }
+            
+            updateStatus('Comprehensive 3D character ready');
+        }
+        
+        function buildComprehensiveCharacter() {
+            log('Building comprehensive 3D character...', 'info');
+            
+            // Materials
+            const skinMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffdbac, 
+                metalness: 0.0, 
+                roughness: 0.8 
+            });
+            
+            const clothingMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x4a90e2, 
+                metalness: 0.1, 
+                roughness: 0.9 
+            });
+            
+            const hairMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3b2e2a, 
+                metalness: 0.0, 
+                roughness: 1.0 
+            });
+            
+            const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const pupilMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const noseMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+            const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
+            
+            // Character root
+            character = new THREE.Group();
+            character.position.set(0, 0, 0);
+            scene.add(character);
+            
+            // Build skeleton hierarchy
+            const root = new THREE.Group();
+            character.add(root);
+            
+            // Pelvis (root of body)
+            const pelvis = new THREE.Group();
+            pelvis.position.set(0, 1.0, 0);
+            root.add(pelvis);
+            
+            // Torso
+            const torsoGeometry = new THREE.CapsuleGeometry(0.25, 0.7, 8, 16);
+            const torso = new THREE.Mesh(torsoGeometry, clothingMaterial);
+            torso.castShadow = true;
+            torso.receiveShadow = true;
+            torso.position.set(0, 0.4, 0);
+            pelvis.add(torso);
+            
+            // Chest (upper torso anchor)
+            const chest = new THREE.Group();
+            chest.position.set(0, 0.6, 0);
+            torso.add(chest);
+            
+            // Neck
+            const neck = new THREE.Group();
+            neck.position.set(0, 0.2, 0);
+            chest.add(neck);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.castShadow = true;
+            head.position.set(0, 0.25, 0);
+            neck.add(head);
+            
+            // Hair
+            const hairGeometry = new THREE.SphereGeometry(0.31, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.6);
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.position.copy(head.position);
+            hair.position.y += 0.05;
+            neck.add(hair);
+            
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.045, 16, 16);
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.1, 0.25, 0.25);
+            rightEye.position.set(0.1, 0.25, 0.25);
+            neck.add(leftEye, rightEye);
+            
+            // Pupils
+            const pupilGeometry = new THREE.SphereGeometry(0.02, 12, 12);
+            const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            leftPupil.position.set(-0.1, 0.24, 0.29);
+            rightPupil.position.set(0.1, 0.24, 0.29);
+            neck.add(leftPupil, rightPupil);
+            
+            // Nose
+            const noseGeometry = new THREE.SphereGeometry(0.03, 12, 12);
+            const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+            nose.position.set(0, 0.22, 0.28);
+            neck.add(nose);
+            
+            // Mouth (simple for now, can be enhanced)
+            const mouthGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+            const mouth = new THREE.Mesh(mouthGeometry, new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+            mouth.position.set(0, 0.15, 0.28);
+            mouth.scale.set(2, 0.5, 0.5);
+            neck.add(mouth);
+            
+            // Arms
+            // Left arm
+            const leftShoulder = new THREE.Group();
+            leftShoulder.position.set(-0.35, 0.15, 0);
+            chest.add(leftShoulder);
+            
+            const leftUpperArmGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 16);
+            const leftUpperArm = new THREE.Mesh(leftUpperArmGeometry, skinMaterial);
+            leftUpperArm.position.set(0, -0.2, 0);
+            leftUpperArm.castShadow = true;
+            leftShoulder.add(leftUpperArm);
+            
+            const leftElbow = new THREE.Group();
+            leftElbow.position.set(0, -0.4, 0);
+            leftUpperArm.add(leftElbow);
+            
+            const leftForearmGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.35, 16);
+            const leftForearm = new THREE.Mesh(leftForearmGeometry, skinMaterial);
+            leftForearm.position.set(0, -0.175, 0);
+            leftForearm.castShadow = true;
+            leftElbow.add(leftForearm);
+            
+            const leftHandGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+            const leftHand = new THREE.Mesh(leftHandGeometry, skinMaterial);
+            leftHand.position.set(0, -0.35, 0);
+            leftHand.castShadow = true;
+            leftForearm.add(leftHand);
+            
+            // Right arm (mirrored)
+            const rightShoulder = new THREE.Group();
+            rightShoulder.position.set(0.35, 0.15, 0);
+            chest.add(rightShoulder);
+            
+            const rightUpperArmGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 16);
+            const rightUpperArm = new THREE.Mesh(rightUpperArmGeometry, skinMaterial);
+            rightUpperArm.position.set(0, -0.2, 0);
+            rightUpperArm.castShadow = true;
+            rightShoulder.add(rightUpperArm);
+            
+            const rightElbow = new THREE.Group();
+            rightElbow.position.set(0, -0.4, 0);
+            rightUpperArm.add(rightElbow);
+            
+            const rightForearmGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.35, 16);
+            const rightForearm = new THREE.Mesh(rightForearmGeometry, skinMaterial);
+            rightForearm.position.set(0, -0.175, 0);
+            rightForearm.castShadow = true;
+            rightElbow.add(rightForearm);
+            
+            const rightHandGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+            const rightHand = new THREE.Mesh(rightHandGeometry, skinMaterial);
+            rightHand.position.set(0, -0.35, 0);
+            rightHand.castShadow = true;
+            rightForearm.add(rightHand);
+            
+            // Legs
+            // Left leg
+            const leftHip = new THREE.Group();
+            leftHip.position.set(-0.15, 0, 0);
+            pelvis.add(leftHip);
+            
+            const leftThighGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 16);
+            const leftThigh = new THREE.Mesh(leftThighGeometry, clothingMaterial);
+            leftThigh.position.set(0, -0.3, 0);
+            leftThigh.castShadow = true;
+            leftHip.add(leftThigh);
+            
+            const leftKnee = new THREE.Group();
+            leftKnee.position.set(0, -0.6, 0);
+            leftThigh.add(leftKnee);
+            
+            const leftShinGeometry = new THREE.CylinderGeometry(0.09, 0.09, 0.55, 16);
+            const leftShin = new THREE.Mesh(leftShinGeometry, skinMaterial);
+            leftShin.position.set(0, -0.275, 0);
+            leftShin.castShadow = true;
+            leftKnee.add(leftShin);
+            
+            const leftFootGeometry = new THREE.BoxGeometry(0.16, 0.08, 0.3);
+            const leftFoot = new THREE.Mesh(leftFootGeometry, shoeMaterial);
+            leftFoot.position.set(0, -0.55, 0.1);
+            leftFoot.castShadow = true;
+            leftShin.add(leftFoot);
+            
+            // Right leg (mirrored)
+            const rightHip = new THREE.Group();
+            rightHip.position.set(0.15, 0, 0);
+            pelvis.add(rightHip);
+            
+            const rightThighGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 16);
+            const rightThigh = new THREE.Mesh(rightThighGeometry, clothingMaterial);
+            rightThigh.position.set(0, -0.3, 0);
+            rightThigh.castShadow = true;
+            rightHip.add(rightThigh);
+            
+            const rightKnee = new THREE.Group();
+            rightKnee.position.set(0, -0.6, 0);
+            rightThigh.add(rightKnee);
+            
+            const rightShinGeometry = new THREE.CylinderGeometry(0.09, 0.09, 0.55, 16);
+            const rightShin = new THREE.Mesh(rightShinGeometry, skinMaterial);
+            rightShin.position.set(0, -0.275, 0);
+            rightShin.castShadow = true;
+            rightKnee.add(rightShin);
+            
+            const rightFootGeometry = new THREE.BoxGeometry(0.16, 0.08, 0.3);
+            const rightFoot = new THREE.Mesh(rightFootGeometry, shoeMaterial);
+            rightFoot.position.set(0, -0.55, 0.1);
+            rightFoot.castShadow = true;
+            rightShin.add(rightFoot);
+            
+            // Store character parts for animation
+            characterParts = {
+                root,
+                pelvis,
+                torso,
+                chest,
+                neck,
+                head,
+                hair,
+                leftEye,
+                rightEye,
+                leftPupil,
+                rightPupil,
+                nose,
+                mouth,
+                leftShoulder,
+                leftUpperArm,
+                leftElbow,
+                leftForearm,
+                leftHand,
+                rightShoulder,
+                rightUpperArm,
+                rightElbow,
+                rightForearm,
+                rightHand,
+                leftHip,
+                leftThigh,
+                leftKnee,
+                leftShin,
+                leftFoot,
+                rightHip,
+                rightThigh,
+                rightKnee,
+                rightShin,
+                rightFoot,
+                materials: {
+                    skin: skinMaterial,
+                    clothing: clothingMaterial,
+                    hair: hairMaterial,
+                    eye: eyeMaterial,
+                    pupil: pupilMaterial,
+                    nose: noseMaterial,
+                    shoe: shoeMaterial
+                }
+            };
+            
+            log('Comprehensive 3D character built successfully', 'success');
+        }
+        
+        function onResize() {
+            const container = document.getElementById('threeContainer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const deltaTime = clock.getDelta();
+            
+            if (controls) {
+                controls.update();
+            }
+            
+            // Update animations based on current action
+            if (currentAction && characterParts.root) {
+                updateActionAnimation(deltaTime);
+            }
+            
+            renderer.render(scene, camera);
+            updateDebugInfo();
+        }
+        
+        function updateActionAnimation(deltaTime) {
+            const time = clock.getElapsedTime();
+            
+            // Reset transformations
+            resetCharacterPose();
+            
+            switch (currentAction) {
+                case 'wave':
+                    // Animate right arm waving
+                    characterParts.rightShoulder.rotation.z = Math.sin(time * 8) * 0.8 - 0.5;
+                    characterParts.rightElbow.rotation.z = Math.sin(time * 8) * 0.4 + 0.3;
+                    break;
+                    
+                case 'cough':
+                    // Head bob and mouth animation
+                    characterParts.head.rotation.x = Math.sin(time * 10) * 0.2;
+                    characterParts.torso.rotation.x = Math.sin(time * 10) * 0.1;
+                    // Bring hands to mouth
+                    characterParts.leftShoulder.rotation.z = 0.8;
+                    characterParts.rightShoulder.rotation.z = -0.8;
+                    characterParts.leftElbow.rotation.z = -1.0;
+                    characterParts.rightElbow.rotation.z = 1.0;
+                    break;
+                    
+                case 'headache':
+                    // Hands to head, head tilting
+                    characterParts.head.rotation.x = Math.sin(time * 3) * 0.3;
+                    characterParts.leftShoulder.rotation.z = 1.2;
+                    characterParts.rightShoulder.rotation.z = -1.2;
+                    characterParts.leftElbow.rotation.z = -1.5;
+                    characterParts.rightElbow.rotation.z = 1.5;
+                    // Hands to temples
+                    characterParts.leftHand.position.x = 0.2;
+                    characterParts.rightHand.position.x = -0.2;
+                    break;
+                    
+                case 'itch':
+                    // Left arm scratching motion
+                    characterParts.leftShoulder.rotation.z = Math.sin(time * 12) * 0.3 + 0.8;
+                    characterParts.leftElbow.rotation.z = Math.sin(time * 12) * 0.2 - 0.5;
+                    characterParts.materials.skin.color.setHex(0xffaaaa); // Reddish skin
+                    break;
+                    
+                case 'fever':
+                    // Shivering motion and red coloring
+                    characterParts.root.position.x = Math.sin(time * 20) * 0.02;
+                    characterParts.materials.skin.color.setHex(0xffaaaa);
+                    characterParts.head.rotation.z = Math.sin(time * 15) * 0.1;
+                    break;
+                    
+                case 'stomach':
+                    // Hands to stomach, bending forward
+                    characterParts.torso.rotation.x = 0.3;
+                    characterParts.leftShoulder.rotation.z = 0.5;
+                    characterParts.rightShoulder.rotation.z = -0.5;
+                    characterParts.leftElbow.rotation.z = -0.8;
+                    characterParts.rightElbow.rotation.z = 0.8;
+                    break;
+                    
+                case 'leg':
+                    // Leg lifting and hip movement
+                    characterParts.leftHip.rotation.x = Math.sin(time * 6) * 0.5;
+                    characterParts.leftKnee.rotation.x = Math.sin(time * 6) * 0.3;
+                    characterParts.pelvis.rotation.z = Math.sin(time * 6) * 0.1;
+                    break;
+                    
+                case 'dizzy':
+                    // Swaying motion
+                    characterParts.root.rotation.z = Math.sin(time * 4) * 0.2;
+                    characterParts.head.rotation.y = Math.sin(time * 6) * 0.3;
+                    characterParts.torso.rotation.z = Math.sin(time * 4) * 0.1;
+                    break;
+                    
+                case 'sneeze':
+                    // Head back then forward motion
+                    const sneezePhase = Math.sin(time * 8);
+                    characterParts.head.rotation.x = sneezePhase * 0.4;
+                    characterParts.torso.rotation.x = sneezePhase * 0.2;
+                    characterParts.materials.nose.color.setHex(0xff8888);
+                    break;
+                    
+                case 'nausea':
+                    // Forward leaning with hand to mouth
+                    characterParts.torso.rotation.x = 0.4;
+                    characterParts.head.rotation.x = 0.2;
+                    characterParts.rightShoulder.rotation.z = -1.0;
+                    characterParts.rightElbow.rotation.z = 1.2;
+                    characterParts.materials.skin.color.setHex(0xaaffaa); // Greenish
+                    break;
+                    
+                case 'blood':
+                    // Dramatic pose with red coloring
+                    characterParts.materials.skin.color.setHex(0xff6666);
+                    characterParts.torso.rotation.x = 0.2;
+                    characterParts.head.rotation.x = -0.1;
+                    break;
+                    
+                case 'chest':
+                    // Hand to chest, slight lean back
+                    characterParts.rightShoulder.rotation.z = -0.8;
+                    characterParts.rightElbow.rotation.z = 0.5;
+                    characterParts.torso.rotation.x = -0.2;
+                    characterParts.head.rotation.x = -0.1;
+                    break;
+            }
+        }
+        
+        function resetCharacterPose() {
+            if (!characterParts.root) return;
+            
+            // Reset all rotations and positions
+            Object.keys(characterParts).forEach(key => {
+                if (characterParts[key] && characterParts[key].rotation) {
+                    characterParts[key].rotation.set(0, 0, 0);
+                }
+                if (key === 'root') {
+                    characterParts[key].position.set(0, 0, 0);
+                }
+            });
+            
+            // Reset material colors
+            characterParts.materials.skin.color.setHex(0xffdbac);
+            characterParts.materials.nose.color.setHex(0xffdbac);
+        }
+        
+        function performAction(actionType) {
+            log(`Action triggered: ${actionType}`, 'info');
+            
+            try {
+                // Clear any existing action
+                clearCurrentAction();
+                
+                if (!character) {
+                    log('ERROR: 3D Character not found!', 'error');
+                    return;
+                }
+                
+                // Set current action
+                currentAction = actionType;
+                log(`Starting action: ${actionType}`, 'success');
+                
+                // Update status
+                updateStatus(`Performing: ${actionType}`);
+                
+                // Set timeout to clear action (5 seconds)
+                const duration = 5000;
+                log(`Action duration set: ${duration}ms`, 'info');
+                
+                actionTimeout = setTimeout(() => {
+                    clearCurrentAction();
+                }, duration);
+                
+            } catch (error) {
+                log(`ERROR performing action: ${error.message}`, 'error');
+                console.error('Action error:', error);
+            }
+        }
+        
+        function clearCurrentAction() {
+            if (currentAction) {
+                log(`Clearing action: ${currentAction}`, 'info');
+                
+                // Reset character pose
+                resetCharacterPose();
+                
+                currentAction = null;
+                updateStatus('Ready for next action');
+                
+                if (actionTimeout) {
+                    clearTimeout(actionTimeout);
+                    actionTimeout = null;
+                }
+                
+                log('Action cleared successfully', 'success');
+            }
+        }
+        
+        function runDiagnostics() {
+            log('Running comprehensive diagnostics...', 'info');
+            
+            // Check Three.js
+            log(`Three.js version: ${THREE.REVISION}`, 'info');
+            log(`WebGL support: ${renderer ? 'YES' : 'NO'}`, renderer ? 'success' : 'error');
+            log(`OrbitControls: ${controls ? 'YES' : 'NO'}`, controls ? 'success' : 'error');
+            
+            // Check character
+            log(`3D Character: ${character ? 'LOADED' : 'MISSING'}`, character ? 'success' : 'error');
+            
+            if (characterParts.root) {
+                const partCount = Object.keys(characterParts).length - 1; // -1 for materials
+                log(`Character parts: ${partCount} components`, 'success');
+                log(`Materials: ${Object.keys(characterParts.materials).length} types`, 'success');
+            }
+            
+            // Performance info
+            const info = renderer.info;
+            log(`Triangles: ${info.render.triangles}`, 'info');
+            log(`Draw calls: ${info.render.calls}`, 'info');
+            
+            log('Diagnostics complete', 'info');
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            const keyActions = {
+                '1': 'wave',
+                '2': 'cough', 
+                '3': 'headache',
+                '4': 'itch',
+                '5': 'fever',
+                '6': 'stomach',
+                '7': 'leg',
+                '8': 'dizzy',
+                '9': 'sneeze',
+                'q': 'nausea',
+                'w': 'blood',
+                'e': 'chest',
+                'c': () => clearCurrentAction(),
+                'd': () => runDiagnostics(),
+                ' ': () => clearLog()
+            };
+            
+            const action = keyActions[event.key.toLowerCase()];
+            if (action) {
+                event.preventDefault();
+                if (typeof action === 'function') {
+                    action();
+                } else {
+                    performAction(action);
+                }
+                log(`Keyboard shortcut: ${event.key} -> ${typeof action === 'string' ? action : 'function'}`, 'info');
+            }
+        });
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Initializing comprehensive 3D character system...', 'info');
+            
+            // Check for Three.js
+            if (typeof THREE === 'undefined') {
+                log('ERROR: Three.js not loaded!', 'error');
+                updateStatus('ERROR: Three.js required');
+                return;
+            }
+            
+            // Initialize Three.js scene
+            initThree();
+            
+            log('System initialized successfully', 'success');
+        });
+    </script>
+</body>
+</html>

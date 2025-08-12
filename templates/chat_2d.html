@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Chat with {{ patient_data.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+        }
+        
+        /* Left Side - Chat Interface (50%) */
+        .chat-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .patient-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .patient-info h2 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+        
+        .patient-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .message.doctor {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .doctor .message-avatar {
+            background: #27ae60;
+        }
+        
+        .patient .message-avatar {
+            background: #e74c3c;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            line-height: 1.4;
+        }
+        
+        .doctor .message-content {
+            background: #27ae60;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .patient .message-content {
+            background: #ecf0f1;
+            color: #2c3e50;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 20px;
+            font-size: 1em;
+            outline: none;
+        }
+        
+        .message-input:focus {
+            border-color: #3498db;
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        .send-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+        }
+        
+        .typing-indicator {
+            display: none;
+            color: #7f8c8d;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        /* Right Side - 2D Character (50%) */
+        .character-panel {
+            width: 50%;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .action-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+        
+        .character-container {
+            position: relative;
+            transform-origin: center bottom;
+        }
+        
+        /* 2D Character Styles - Copy from chat_2d.html */
+        .patient-character {
+            position: relative;
+            transform-origin: bottom center;
+            animation: gentle-float 4s ease-in-out infinite;
+        }
+        
+        .character-face {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            background: #fdd5b1;
+            border-radius: 40% / 35%;
+            border: 3px solid #000;
+            margin: 0 auto 5px auto;
+            z-index: 10;
+            box-shadow: inset 0 5px #fcb988, 0 3px 10px rgba(0,0,0,0.2);
+        }
+           
+        .character-forehead {
+            position: absolute;
+            bottom: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75px;
+            height: 18px;
+            z-index: 13;
+            border-radius: 25% / 25%;
+        }
+        
+        .character-hair {
+            position: absolute;
+            bottom: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 20px;
+            background: #3b2e2a;
+            border-radius: 90% / 90%;
+            z-index: 13;
+        }
+        
+        .character-eyes {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 24px;
+            z-index: 12;
+        }
+        
+        .eye {
+             width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #333;
+            position: relative;
+        }
+        
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #000;
+            border-radius: 50%;
+        }
+        
+        .character-nose {
+            position: absolute;
+            top: 42px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 12px;
+            background: #fdd5b1;
+            border: 2px solid #7a7a7a;
+            border-radius: 4px 4px 6px 6px;
+            z-index: 12;
+        }
+        
+        .character-mouth {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            background: #fa8787;
+        }
+
+        .character-body {
+            position: relative;
+            width: 100px;
+            height: 150px;
+            background: #5a9;
+            border-radius: 10px;
+            border: 3px solid #000;
+            margin: 0 auto;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .chest-section {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            border-bottom: 2px solid rgba(0,0,0,0.25);
+        }
+        
+        .stomach-section {
+            position: absolute;
+            top: 75px;
+            left: 0;
+            width: 100%;
+            height: 65px;
+        }
+        
+        .character-arms {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            height: 60px;
+        }
+        
+        .arm {
+            position: absolute;
+            width: 24px;
+            height: 100px;
+            background: #ffdbac;
+            border-radius: 8px;
+            border: 2px solid #333;
+            transform-origin: top center;
+        }
+        
+        .arm.left {
+            left: -20px;
+            transform: rotate(-15deg);
+        }
+        
+        .arm.right {
+            right: -20px;
+            transform: rotate(15deg);
+        }
+        
+        .hand {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #ffdbac;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        
+        .character-legs {
+            position: relative;
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .leg {
+            width: 22px;
+            height: 80px;
+            background: #2c3e50;
+            border-radius: 11px;
+            border: 2px solid #333;
+            position: relative;
+        }
+        
+        .foot {
+            position: absolute;
+            bottom: -10px;
+            left: -3px;
+            width: 30px;
+            height: 14px;
+            background: #654321;
+            border-radius: 8px 3px 3px 8px;
+            border: 2px solid #333;
+        }
+        
+        /* Animations - Copy key animations from chat_2d.html */
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* Action-specific animations */
+        .action-wave .arm.right {
+            animation: wave-right 1s ease-in-out 5;
+        }
+        
+        .action-cough .character-mouth { 
+            animation: mouth-circle-open 0.9s ease-in-out 5; 
+        }
+        .action-cough .character-face {
+            animation: cough-head-shake 0.5s ease-in-out 10;
+        }
+        
+        .action-headache .character-face { 
+            animation: head-tilt 5s ease-in-out; 
+        }
+        .action-headache .character-forehead { 
+            animation: forehead-blink-red 0.5s ease-in-out 10; 
+        }
+        
+        .action-itch .arm.left { 
+            animation: itch-scratch-high 0.5s ease-in-out 10; 
+        }
+        
+        .action-fever .character-face,
+        .action-fever .hand {
+            background: #ffaaaa !important;
+            animation: fever-glow 1s ease-in-out 5;
+        }
+        
+        .action-nausea .character-face {
+            animation: nausea-head-forward 2s ease-in-out 2.5;
+        }
+        
+        .action-stomach .arm.left { 
+            animation: arms-cross-left 5s ease-in-out; 
+        }
+        .action-stomach .arm.right { 
+            animation: arms-cross-right 5s ease-in-out; 
+        }
+        .action-stomach .stomach-section { 
+            animation: stomach-blink-yellow 1s ease-in-out 5; 
+        }
+        
+        .action-chest .chest-section { 
+            animation: chest-blink-red 1s ease-in-out 5; 
+        }
+        
+        .action-leg .leg:first-child {
+            animation: leg-movement 0.8s ease-in-out 6;
+        }
+        
+        .action-dizzy .character-face {
+            animation: dizzy-motion 1s ease-in-out 5;
+        }
+        
+        .action-sneeze .character-face {
+            animation: sneeze-motion 2s ease-in-out 5;
+        }
+        .action-sneeze .character-nose {
+            animation: nose-blink-red 2s ease-in-out 5;
+        }
+        
+        /* Keyframes */
+        @keyframes wave-right {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(-45deg); }
+        }
+        
+        @keyframes mouth-circle-open {
+            0%, 100% { width: 15px; height: 15px; }
+            50% { width: 22px; height: 22px; }
+        }
+        
+        @keyframes cough-head-shake {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-2px) rotate(-1deg); }
+            75% { transform: translateY(2px) rotate(1deg); }
+        }
+        
+        @keyframes forehead-blink-red {
+            0%, 100% { background: #fdd5b1; }
+            50% { background: #d51515; }
+        }
+        
+        @keyframes head-tilt {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-8deg); }
+        }
+        
+        @keyframes itch-scratch-high {
+            0%, 100% { transform: rotate(-15deg) translateY(0); }
+            25% { transform: rotate(-70deg) translateX(20px) translateY(-20px); }
+            75% { transform: rotate(-40deg) translateX(12px) translateY(-12px); }
+        }
+        
+        @keyframes fever-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px rgba(255, 170, 170, 0.5); }
+        }
+        
+        @keyframes nausea-head-forward {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(10px); }
+        }
+        
+        @keyframes arms-cross-left {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(-45deg) translateY(25px); }
+        }
+        
+        @keyframes arms-cross-right {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(45deg) translateY(25px); }
+        }
+        
+        @keyframes stomach-blink-yellow {
+            0%, 100% { background: #5a9; }
+            50% { background: #ffd54f; }
+        }
+        
+        @keyframes chest-blink-red {
+            0%, 100% { background: #5a9; }
+            50% { background: #ff6666; }
+        }
+        
+        @keyframes leg-movement {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-8deg); }
+            75% { transform: rotate(8deg); }
+        }
+        
+        @keyframes dizzy-motion {
+            0%, 100% { transform: rotate(0deg); }
+            30% { transform: rotate(-10deg); }
+            70% { transform: rotate(10deg); }
+        }
+        
+        @keyframes sneeze-motion {
+            0%, 100% { transform: rotate(0deg); }
+            70% { transform: translateY(-10px); }
+        }
+        
+        @keyframes nose-blink-red {
+            0%, 100% { background: #fdd5b1; }
+            50% { background: #d51515; }
+        }
+        
+        @keyframes bounce {
+            0% { transform: translateX(-50%) translateY(0px); }
+            100% { transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-panel">
+        <div class="patient-header">
+            <div class="patient-info">
+                <h2>{{ patient_data.name }}</h2>
+                <p>{{ patient_data.age }} years old • {{ patient_data.gender }} • {{ patient_data.occupation }}</p>
+                </div>
+            </div>
+            
+        <div class="messages" id="messages">
+            <div class="message patient">
+                <div class="message-avatar">{{ patient_data.name[0] }}</div>
+                <div class="message-content">
+                    Hello Doctor, I'm {{ patient_data.name }}. I've been feeling unwell lately and thought I should come see you.
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typing">
+            {{ patient_data.name }} is typing...
+        </div>
+        
+        <div class="input-area">
+            <input type="text" class="message-input" id="messageInput" 
+                   placeholder="Type your question to the patient..." 
+                   onkeypress="handleKeyPress(event)">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    
+        <div class="character-panel">
+        <div class="action-status" id="actionStatus">
+            Ready - No active actions
+        </div>
+        
+        <!-- Action Emoji Display -->
+        <div style="position: absolute; top: 50px; left: 50%; transform: translateX(-50%); z-index: 20; font-size: 2em; display: none;" id="actionEmoji">
+            🎭
+            </div>
+            
+            <div class="character-container">
+                <div class="patient-character" id="patientCharacter">
+                    <div class="character-face">
+                        <div class="character-hair"></div>
+                        <div class="character-forehead"></div>
+                        <div class="character-eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="character-nose"></div>
+                    <div class="character-mouth"></div>
+                    </div>
+                    <div class="character-body">
+                        <div class="chest-section"></div>
+                        <div class="stomach-section"></div>
+                        <div class="character-arms">
+                            <div class="arm left">
+                                <div class="hand"></div>
+                            </div>
+                            <div class="arm right">
+                                <div class="hand"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="character-legs">
+                        <div class="leg">
+                            <div class="foot"></div>
+                        </div>
+                        <div class="leg">
+                            <div class="foot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="clearActionQueue()" title="Clear current action queue">Clear Queue</button>
+            <button class="btn btn-secondary" onclick="newPatient()">New Patient</button>
+            <button class="btn btn-secondary" onclick="goHome()">← Home</button>
+        </div>
+    </div>
+
+    <script>
+        const patientName = '{{ patient_data.name }}';
+        let currentAction = null;
+        let actionTimeout = null;
+        let actionPollingInterval = null;
+        
+        function addMessage(content, isDoctor = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isDoctor ? 'Dr' : patientName[0]}</div>
+                <div class="message-content">${content}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typing').style.display = 'block';
+        }
+        
+        function hideTyping() {
+            document.getElementById('typing').style.display = 'none';
+        }
+        
+        function updateActionStatus(status) {
+            document.getElementById('actionStatus').textContent = status;
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            document.getElementById('sendBtn').disabled = true;
+            showTyping();
+            
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                if (data.response) {
+                    addMessage(data.response, false);
+                    
+                    // Process detected actions
+                    if (data.detected_actions && data.detected_actions.length > 0) {
+                        console.log('Detected actions:', data.detected_actions);
+                        updateActionStatus(`Actions queued: ${data.detected_actions.join(', ')}`);
+                        
+                        // Add visual indicator to the message
+                        const lastMessage = document.querySelector('.message:last-child .message-content');
+                        if (lastMessage) {
+                            const actionIndicator = document.createElement('div');
+                            actionIndicator.style.cssText = `
+                                margin-top: 8px; 
+                                padding: 4px 8px; 
+                                background: rgba(33, 150, 243, 0.1); 
+                                border-left: 3px solid #2196f3; 
+                                font-size: 0.8em; 
+                                color: #1976d2;
+                                border-radius: 0 4px 4px 0;
+                            `;
+                            actionIndicator.innerHTML = `🎭 Detected: ${data.detected_actions.join(', ')}`;
+                            lastMessage.appendChild(actionIndicator);
+                        }
+                    } else {
+                        console.log('No actions detected');
+                    }
+                    
+                    // Log queue status
+                    if (data.queue_status) {
+                        console.log('Queue status:', data.queue_status);
+                    }
+                    
+                    if (data.should_end_chat) {
+                        setTimeout(() => {
+                            endConsultation();
+                        }, 2000);
+                    }
+                } else {
+                    addMessage("I'm sorry, I didn't understand that. Could you please rephrase?", false);
+                }
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage("I'm having trouble responding right now. Please try again.", false);
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            });
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function performAction(actionType) {
+            console.log(`🎭 Starting animation: ${actionType}`);
+            
+            try {
+                clearCurrentAction();
+                
+                const character = document.getElementById('patientCharacter');
+                if (!character) {
+                    console.error('Character element not found!');
+                    return;
+                }
+                
+                currentAction = actionType;
+                
+                // Apply action class for CSS animation
+                const actionClass = `action-${actionType}`;
+                character.classList.add(actionClass);
+                console.log(`✅ Applied CSS class: ${actionClass} - Animation will run for 5 seconds`);
+                
+                // Show action emoji
+                showActionEmoji(actionType);
+                
+                updateActionStatus(`Performing: ${actionType}`);
+                
+                // Set timeout to clear action after 5 seconds
+                actionTimeout = setTimeout(() => {
+                    console.log(`⏰ Animation completed: ${actionType}`);
+                    clearCurrentAction();
+                }, 5000);
+                
+            } catch (error) {
+                console.error('Error performing action:', error);
+            }
+        }
+        
+        function clearCurrentAction() {
+            if (currentAction) {
+                console.log(`🧹 Clearing action: ${currentAction}`);
+                
+                const character = document.getElementById('patientCharacter');
+                if (character) {
+                    // Remove all action classes
+                    character.className = 'patient-character';
+                    console.log('All action classes cleared');
+                }
+                
+                // Hide action emoji
+                hideActionEmoji();
+                
+                // Clear timeout
+                if (actionTimeout) {
+                    clearTimeout(actionTimeout);
+                    actionTimeout = null;
+                }
+                
+                currentAction = null;
+                updateActionStatus('Ready - No active actions');
+            }
+        }
+        
+        // Action Queue Polling System
+        let lastQueueStatus = '';
+        let lastCurrentAction = null;
+        
+        function startActionPolling() {
+            if (actionPollingInterval) return;
+            
+            actionPollingInterval = setInterval(() => {
+                fetch('/get_next_action')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.current_action) {
+                            // Only trigger action if:
+                            // 1. We don't have a current action running, OR
+                            // 2. The action from backend is different from what we're currently running
+                            if (!currentAction || currentAction !== data.current_action) {
+                                console.log(`Auto-triggering action: ${data.current_action}`);
+                                console.log('Queue status:', data.queue_status);
+                                
+                                performAction(data.current_action);
+                                
+                                // Update status with queue info
+                                if (data.queue_status) {
+                                    updateActionStatus(`Performing: ${data.current_action} | Queue: ${data.queue_status.queue_length} items`);
+                                }
+                            } else {
+                                // Same action is still running, just update status
+                                if (data.queue_status) {
+                                    updateActionStatus(`Performing: ${data.current_action} | Queue: ${data.queue_status.queue_length} items | Running...`);
+                                }
+                            }
+                            
+                            lastCurrentAction = data.current_action;
+                        } else {
+                            // No action in queue
+                            if (lastCurrentAction !== null) {
+                                updateActionStatus('Queue empty - ready for new actions');
+                                lastCurrentAction = null;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Polling error:', error);
+                    });
+            }, 2000); // Poll every 2 seconds to allow animations to complete
+            
+            console.log('Action polling started');
+        }
+        
+        function stopActionPolling() {
+            if (actionPollingInterval) {
+                clearInterval(actionPollingInterval);
+                actionPollingInterval = null;
+                console.log('Action polling stopped');
+            }
+        }
+        
+        function endConsultation() {
+            document.getElementById('messageInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            addMessage("🏥 Consultation ended. Thank you for using the Medical Patient Simulator!", true);
+            stopActionPolling();
+        }
+        
+        function newPatient() {
+            if (confirm('Are you sure you want to generate a new patient? This will end the current consultation.')) {
+                fetch('/new_patient', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        function clearActionQueue() {
+            fetch('/clear_action_queue', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateActionStatus('Action queue cleared');
+                    console.log('Action queue cleared successfully');
+                    // Clear current action
+                    clearCurrentAction();
+                    lastQueueStatus = '';
+                    lastCurrentAction = null;
+                } else {
+                    console.error('Failed to clear action queue');
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing action queue:', error);
+            });
+        }
+        
+        // Action Emoji Display Functions
+        function showActionEmoji(actionType) {
+            const emojiElement = document.getElementById('actionEmoji');
+            const actionEmojis = {
+                'wave': '🤚',      // Hand/arm issues
+                'cough': '😷',     // Coughing/throat
+                'headache': '🤕',  // Head pain
+                'itch': '🔴',      // Skin/rash issues
+                'fever': '🤒',     // Temperature/fever
+                'stomach': '🤱',   // Stomach/nausea
+                'leg': '🦵',       // Leg/foot issues
+                'dizzy': '😵',     // Dizziness/vertigo
+                'sneeze': '🤧',    // Sneezing/nasal
+                'nausea': '🤢',    // Nausea/vomiting
+                'blood': '🩸',     // Bleeding
+                'chest': '🫀'      // Chest/heart issues
+            };
+            
+            if (emojiElement && actionEmojis[actionType]) {
+                emojiElement.textContent = actionEmojis[actionType];
+                emojiElement.style.display = 'block';
+                
+                // Add animation
+                emojiElement.style.animation = 'none';
+                setTimeout(() => {
+                    emojiElement.style.animation = 'bounce 0.6s ease-in-out infinite alternate';
+                }, 10);
+                
+                console.log(`Showing emoji: ${actionEmojis[actionType]} for action: ${actionType}`);
+            }
+        }
+        
+        function hideActionEmoji() {
+            const emojiElement = document.getElementById('actionEmoji');
+            if (emojiElement) {
+                emojiElement.style.display = 'none';
+                emojiElement.style.animation = 'none';
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('2D Chat interface loaded');
+            startActionPolling();
+            document.getElementById('messageInput').focus();
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopActionPolling();
+        });
+    </script>
+</body>
+</html>

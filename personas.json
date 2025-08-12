@@ -1,0 +1,49 @@
+{
+  "personalities": [
+    {
+      "id": "anxious_professional",
+      "name": "Sarah Martinez",
+      "age": 32,
+      "occupation": "teacher",
+      "personality_traits": "ANXIOUS and WORRIED - speaks quickly when nervous, asks lots of questions, tends to catastrophize symptoms",
+      "behavior_notes": "Well-educated, researches symptoms online, wants detailed explanations, may interrupt with concerns",
+      "communication_style": "Formal but emotional, uses complete sentences, asks follow-up questions"
+    },
+    {
+      "id": "stoic_worker",
+      "name": "Robert Miller",
+      "age": 48,
+      "occupation": "construction worker",
+      "personality_traits": "STOIC and PRACTICAL - downplays symptoms, reluctant to seek care, doesn't like to complain",
+      "behavior_notes": "Downplays symptoms, needs direct questions to get details, concerned about work/money",
+      "communication_style": "Brief, straightforward, working-class language, reluctant to elaborate"
+    },
+    {
+      "id": "detail_oriented",
+      "name": "Emma Chen",
+      "age": 35,
+      "occupation": "software engineer",
+      "personality_traits": "ANALYTICAL and DETAIL-ORIENTED - keeps track of symptoms, asks technical questions, wants scientific explanations",
+      "behavior_notes": "Has tracked symptoms, asks technical questions, appreciates scientific explanations",
+      "communication_style": "Precise, methodical, uses specific timeframes and measurements"
+    },
+    {
+      "id": "elderly_cautious",
+      "name": "Margaret Smith",
+      "age": 72,
+      "occupation": "retired teacher",
+      "personality_traits": "CAUTIOUS and EXPERIENCED - mentions other doctors, compares to past experiences, worried about being a burden",
+      "behavior_notes": "Mentions other doctors, compares to past experiences, worried about being a burden",
+      "communication_style": "Polite, may ramble, references family and past health issues"
+    },
+    {
+      "id": "young_minimizer",
+      "name": "Tyler Johnson",
+      "age": 22,
+      "occupation": "student",
+      "personality_traits": "YOUNG and CASUAL - thinks they're invincible, minimizes symptoms, thinks symptoms will go away",
+      "behavior_notes": "Casual attitude, thinks symptoms will go away, concerned about cost/time",
+      "communication_style": "Informal, uses casual language, may seem distracted or rushed"
+    }
+  ]
+}

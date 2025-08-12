@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Animation Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left side - Controls and Logs (30%) */
+        .control-panel {
+            width: 30%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .action-btn:active {
+            transform: translateY(1px);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+        
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            height: 200px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.success {
+            color: #00ff00;
+        }
+        
+        .log-entry.error {
+            color: #ff4444;
+        }
+        
+        .log-entry.info {
+            color: #44aaff;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        /* Right side - Character Display (70%) */
+        .character-panel {
+            width: 70%;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .character-container {
+            position: relative;
+            transform-origin: center bottom;
+        }
+        
+        /* Fixed Character Structure */
+        .patient-character {
+            position: relative;
+            transform-origin: bottom center;
+            animation: gentle-float 4s ease-in-out infinite;
+        }
+        
+        /* Face/Head - rounded rectangle per example */
+        .character-face {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            background: #fdd5b1;
+            border-radius: 40% / 35%;
+            border: 3px solid #000;
+            margin: 0 auto 5px auto;
+            z-index: 10;
+            box-shadow: inset 0 5px #fcb988, 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .character-forehead{
+           
+            position: absolute;
+            bottom: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75px;
+            height: 18px;
+            z-index: 13;
+            border-radius: 25% / 25%;
+        }
+        /* Hair/forehead band at top of head (skin-colored overlay) */
+        .character-hair {
+            position: absolute;
+            bottom: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 20px;
+            background: #3b2e2a;
+            border-radius: 90% / 90%;
+            z-index: 13;
+        }
+        
+        /* Eyes - positioned on face */
+        .character-eyes {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 24px;
+            z-index: 12;
+        }
+        
+        .eye {
+             width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #333;
+            position: relative;
+        }
+        
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #000;
+            border-radius: 50%;
+        }
+        
+        /* Nose - positioned on face */
+        .character-nose {
+            position: absolute;
+            top: 42px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 12px;
+            background: #fdd5b1;
+            border: 2px solid #7a7a7a;
+            border-radius: 4px 4px 6px 6px;
+            z-index: 12;
+        }
+        
+        /* Mouth */
+        .character-mouth {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            background: #fa8787;
+        }
+
+        /* Overlay that covers top 20% of the mouth area (slight shade, no outline) */
+        .character-mouth .mouth-head-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20%;
+            background: #ffdbac; /* same as face for a subtle cover */
+            opacity: 0.95;
+            border: none;
+            pointer-events: none;
+        }
+
+        
+        /* Thermometer for fever */
+        .fever-thermometer {
+            position: absolute;
+            bottom: -5px;
+            right: -15px;
+            width: 3px;
+            height: 20px;
+            background: #ff4444;
+            border: 1px solid #333;
+            border-radius: 2px;
+            opacity: 0;
+        }
+        
+        .fever-thermometer::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: -2px;
+            width: 7px;
+            height: 7px;
+            background: #ff4444;
+            border: 1px solid #333;
+            border-radius: 50%;
+        }
+        
+        /* Body - use example's proportions */
+        .character-body {
+            position: relative;
+            width: 100px;
+            height: 150px;
+            background: #5a9;
+            border-radius: 10px;
+            border: 3px solid #000;
+            margin: 0 auto;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Split torso into chest and stomach sections */
+        .chest-section {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            width: 100%;
+            height: 70px; /* top half */
+            border-bottom: 2px solid rgba(0,0,0,0.25);
+        }
+        .stomach-section {
+            position: absolute;
+            top: 75px;
+            left: 0;
+            width: 100%;
+            height: 65px; /* bottom half */
+        }
+        
+        /* Arms - FIXED POSITIONING */
+        .character-arms {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            height: 60px;
+        }
+        
+        .arm {
+            position: absolute;
+            width: 24px; /* thicker arms */
+            height: 100px;
+            background: #ffdbac;
+            border-radius: 8px;
+            border: 2px solid #333;
+            transform-origin: top center;
+        }
+        
+        .arm.left {
+            left: -20px;
+            transform: rotate(-15deg);
+        }
+        
+        .arm.right {
+            right: -20px;
+            transform: rotate(15deg);
+        }
+        
+        .hand {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #ffdbac;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        
+        /* Legs - enlarged proportionally */
+        .character-legs {
+            position: relative;
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .leg {
+            width: 22px;
+            height: 80px;
+            background: #2c3e50;
+            border-radius: 11px;
+            border: 2px solid #333;
+            position: relative;
+        }
+        
+        .foot {
+            position: absolute;
+            bottom: -10px;
+            left: -3px;
+            width: 30px;
+            height: 14px;
+            background: #654321;
+            border-radius: 8px 3px 3px 8px;
+            border: 2px solid #333;
+        }
+        
+        /* Status Display */
+        .status-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        /* Animation Classes */
+        .gentle-float {
+            animation: gentle-float 4s ease-in-out infinite;
+        }
+        
+        /* Base Animations */
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes eye-movement {
+            0%, 20% { transform: translate(0, 0); }
+            25% { transform: translate(3px, 0); }
+            45% { transform: translate(-3px, 0); }
+            65% { transform: translate(0, -2px); }
+            85% { transform: translate(0, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+        
+        /* Action-specific animations - 5 second duration each */
+        
+        /* Wave - Right arm waves */
+        .action-wave .arm.right {
+            animation: wave-right 1s ease-in-out 5;
+        }
+        
+        /* Cough - circular mouth pulsing, left arm to throat */
+        .action-cough .character-mouth { animation: mouth-circle-open 0.9s ease-in-out 5; }
+        .action-cough .character-face {
+            animation: cough-head-shake 0.5s ease-in-out 10;
+        }
+        
+        .action-cough .arm.right { animation: hand-to-throat-left 5s ease-in-out; }
+        
+        /* Headache - Hand to head, forehead turns red, wrinkly lines */
+        
+        .action-headache .character-face { animation: head-tilt 5s ease-in-out; }
+        .action-headache .character-forehead { animation: forehead-blink-red 0.5s ease-in-out 10; }
+        
+        /* Itch - higher reach and back/forth, left arm turns red */
+        .action-itch .arm.left { animation: itch-scratch-high 0.5s ease-in-out 10; }
+        
+        /* Fever - Face and hands red + thermometer */
+        .action-fever .character-face,
+        .action-fever .hand {
+            background: #ffaaaa !important;
+            animation: fever-glow 1s ease-in-out 5;
+        }
+        .action-fever .fever-thermometer {
+            opacity: 1;
+            animation: thermometer-appear 1s ease-in-out 5;
+        }
+        
+        /* Nausea - Face forward, green stuff from mouth */
+        .action-nausea .character-face {
+            animation: nausea-head-forward 2s ease-in-out 2.5;
+        }
+        .action-nausea .green-vomit {
+            opacity: 1;
+            animation: vomit-stream 1s ease-in-out 5;
+        }
+        
+        /* Stomach - arms cross inward, stomach blinks yellow */
+        .action-stomach .arm.left { animation: arms-cross-left 5s ease-in-out; }
+        .action-stomach .arm.right { animation: arms-cross-right 5s ease-in-out; }
+        .action-stomach .stomach-section { animation: stomach-blink-yellow 1s ease-in-out 5; }
+        
+        /* Blood - Red droplets from arm and stomach */
+        .action-blood .blood-drop {
+            opacity: 1;
+            animation: blood-drip 1.5s ease-in-out 3;
+        }
+
+        /* Chest - Blink red on chest section */
+        .action-chest .chest-section { animation: chest-blink-red 1s ease-in-out 5; }
+        
+        /* Leg - Leg moves back and forth */
+        .action-leg .leg:first-child {
+            animation: leg-movement 0.8s ease-in-out 6;
+        }
+        
+        /* Dizzy - Star moves left and right, continuous */
+        .action-dizzy .dizzy-star {
+            opacity: 1;
+            animation: star-left-right 1.6s ease-in-out infinite;
+        }
+        
+        /* Sneeze - Face back then forward, nose blinks red */
+        .action-sneeze .character-face {
+            animation: sneeze-motion 2s ease-in-out 5;
+        }
+        .action-sneeze .character-nose {
+            animation: nose-blink-red 2s ease-in-out 5;
+        }
+        .action-sneeze .bubble-effect {
+            animation: bubble-float 2s ease-in-out 5;
+        }
+        
+        /* Effect overlays */
+        .bubble-effect {
+            position: absolute;
+            top: 10px;
+            right: -20px;
+            width: 15px;
+            height: 15px;
+            background: rgba(200, 200, 255, 0.8);
+            border-radius: 50%;
+            border: 2px solid #333;
+            opacity: 0;
+        }
+        
+        .action-cough .bubble-effect {
+            animation: bubble-float 1s ease-in-out 5;
+        }
+        
+        .headache-lines {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 20px;
+            opacity: 0;
+        }
+        
+        .headache-lines::before,
+        .headache-lines::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: #ff4444;
+            border-radius: 2px;
+        }
+        
+        .headache-lines::before {
+            top: 0;
+            left: 0;
+            transform: rotate(-15deg);
+        }
+        
+        .headache-lines::after {
+            top: 5px;
+            left: 15px;
+            transform: rotate(15deg);
+        }
+        
+        .action-headache .headache-lines {
+            animation: headache-blink 0.5s ease-in-out 10;
+        }
+        
+        .dizzy-star {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+        }
+        
+        .dizzy-star::before {
+            content: '⭐';
+            position: absolute;
+            font-size: 16px;
+        }
+        
+        .action-dizzy .dizzy-star { animation: star-left-right 1.6s ease-in-out infinite; }
+        .action-dizzy .character-face {
+            animation: dizzy-motion 1s ease-in-out 5;
+        }
+        /* Green vomit for nausea */
+        .green-vomit {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 25px;
+            background: linear-gradient(to bottom, #90EE90, #228B22);
+            border-radius: 4px;
+            opacity: 0;
+        }
+        
+        /* Blood drops */
+        .blood-drop {
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: #8B0000;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+        }
+        
+        .blood-drop.arm {
+            top: 50px;
+            right: -25px;
+        }
+        
+        .blood-drop.stomach {
+            top: 80px;
+            left: 30px;
+        }
+        
+        /* Keyframe Animations */
+        @keyframes wave-right {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(-45deg); }
+        }
+        
+        /* New animation for circular mouth opening */
+        @keyframes mouth-circle-open {
+            0%, 100% { width: 15px; height: 15px; }
+            50% { width: 22px; height: 22px; }
+        }
+        
+        @keyframes cough-head-shake {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-2px) rotate(-1deg); }
+            75% { transform: translateY(2px) rotate(1deg); }
+        }
+        
+        @keyframes chest-movement {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-2px) scale(1.05); }
+        }
+        @keyframes nose-blink-red {
+            0%, 100% { background: #fdd5b1; }
+            50% { background: #d51515; }
+        }
+        @keyframes forehead-blink-red {
+            0%, 100% { background: #fdd5b1; }
+            50% { background:#d51515; }
+        }
+        
+        @keyframes hand-to-throat {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(-60deg) translateY(-10px); }
+        }
+        @keyframes hand-to-throat-left {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(100deg) translateY(-10px); }
+        }
+        
+        @keyframes hand-to-head {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-150deg) translateX(-15px) translateY(-20px); }
+        }
+        
+        @keyframes head-tilt {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-8deg); }
+        }
+        
+        @keyframes itch-scratch {
+            0%, 100% { transform: rotate(-15deg); }
+            25% { transform: rotate(-45deg) translateX(15px); }
+            75% { transform: rotate(-25deg) translateX(10px); }
+        }
+        @keyframes itch-scratch-high {
+            0%, 100% { transform: rotate(-15deg) translateY(0); }
+            25% { transform: rotate(-70deg) translateX(20px) translateY(-20px); }
+            75% { transform: rotate(-40deg) translateX(12px) translateY(-12px); }
+        }
+        
+        @keyframes fever-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px rgba(255, 170, 170, 0.5); }
+        }
+        
+        @keyframes hands-to-stomach {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(-45deg) translateY(25px); }
+        }
+        
+        @keyframes leg-movement {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-8deg); }
+            75% { transform: rotate(8deg); }
+        }
+        
+        @keyframes dizzy-spin {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+        
+        @keyframes sneeze-motion {
+            0%, 100% { transform: rotate(0deg); }
+            70% { transform: translateY(-10px); }
+        }
+        @keyframes dizzy-motion {
+            0%, 100% { transform: rotate(0deg); }
+            30% { transform: rotate(-10deg) ; }
+            70% { transform: rotate(10deg) ; }
+        }
+        
+        @keyframes pox-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        @keyframes bubble-float {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            50% { opacity: 1; transform: translateY(-10px) scale(1); }
+            100% { opacity: 0; transform: translateY(-20px) scale(1.2); }
+        }
+        
+        @keyframes headache-blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes star-left-right {
+            0% { 
+                opacity: 1; 
+                transform: translateX(-50%) translateX(-20px); 
+            }
+            25% { 
+                transform: translateX(-50%) translateX(20px); 
+            }
+            50% { 
+                transform: translateX(-50%) translateX(-20px); 
+            }
+            75% { 
+                transform: translateX(-50%) translateX(20px); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateX(-50%) translateX(-20px); 
+            }
+        }
+        
+        @keyframes nausea-head-forward {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(10px) ; }
+        }
+        
+        @keyframes vomit-stream {
+            0% { 
+                opacity: 0; 
+                transform: translateX(-50%) scaleY(0); 
+            }
+            30% { 
+                opacity: 1; 
+                transform: translateX(-50%) scaleY(1); 
+            }
+            70% { 
+                opacity: 1; 
+                transform: translateX(-50%) scaleY(1.2); 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(-50%) scaleY(0.8); 
+            }
+        }
+        
+        @keyframes stomach-blink {
+            0%, 100% { background: #5a9; }
+            50% { background: #ff6666; }
+        }
+        @keyframes stomach-blink-yellow {
+            0%, 100% { background: #5a9; }
+            50% { background: #ffd54f; }
+        }
+        @keyframes chest-blink-red {
+            0%, 100% { background: #5a9; }
+            50% { background: #ff6666; }
+        }
+        
+        @keyframes blood-drip {
+            0% { 
+                opacity: 0; 
+                transform: translateY(0); 
+            }
+            30% { 
+                opacity: 1; 
+                transform: translateY(10px); 
+            }
+            70% { 
+                opacity: 1; 
+                transform: translateY(20px); 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateY(30px); 
+            }
+        }
+        
+        @keyframes thermometer-appear {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Panel - Controls and Logs -->
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>🎭 Character Actions</h3>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="performAction('wave')">👋 Wave</button>
+                    <button class="action-btn" onclick="performAction('cough')">😷 Cough</button>
+                    <button class="action-btn" onclick="performAction('headache')">🤕 Headache</button>
+                    <button class="action-btn" onclick="performAction('itch')">🤏 Itch</button>
+                    <button class="action-btn" onclick="performAction('fever')">🤒 Fever</button>
+                    <button class="action-btn" onclick="performAction('stomach')">🤱 Stomach</button>
+                    <button class="action-btn" onclick="performAction('leg')">🦵 Leg</button>
+                    <button class="action-btn" onclick="performAction('dizzy')">😵 Dizzy</button>
+                    <button class="action-btn" onclick="performAction('sneeze')">🤧 Sneeze</button>
+                    <button class="action-btn" onclick="performAction('nausea')">🤢 Nausea</button>
+                    <button class="action-btn" onclick="performAction('blood')">🩸 Blood</button>
+                    <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h3>📝 Action Log</h3>
+                <div class="log-container" id="actionLog">
+                    <div class="log-entry info">[SYSTEM] Character animation test ready</div>
+                </div>
+                <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+            </div>
+        </div>
+        
+        <!-- Right Panel - Character Display -->
+        <div class="character-panel">
+            <div class="status-display" id="statusDisplay">
+                Ready for action testing
+            </div>
+            
+            <div class="character-container">
+                <div class="patient-character" id="patientCharacter">
+                    <div class="character-face">
+                        <div class="character-hair"></div>
+                        <div class="character-forehead"></div>
+                        <div class="character-eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="character-nose"></div>
+                        <div class="character-mouth">
+                            <div class="mouth-head-overlay"></div>
+                            <div class="bubble-effect"></div>
+                            <div class="sneeze-burst"></div>
+                            <div class="green-vomit"></div>
+                            <div class="fever-thermometer"></div>
+                        </div>
+                        
+                        <div class="headache-lines"></div>
+                        <div class="dizzy-star"></div>
+                    </div>
+                    <div class="character-body">
+                        <div class="chest-section"></div>
+                        <div class="stomach-section"></div>
+                        <div class="character-arms">
+                            <div class="arm left">
+                                <div class="hand"></div>
+                            </div>
+                            <div class="arm right">
+                                <div class="hand"></div>
+                                <div class="blood-drop arm"></div>
+                            </div>
+                        </div>
+                        <div class="blood-drop stomach"></div>
+                    </div>
+                    <div class="character-legs">
+                        <div class="leg">
+                            <div class="foot"></div>
+                        </div>
+                        <div class="leg">
+                            <div class="foot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAction = null;
+        let actionTimeout = null;
+        let actionQueue = [];
+        let actionPollingInterval = null;
+        
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('actionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Also log to browser console for debugging
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('actionLog').innerHTML = 
+                '<div class="log-entry info">[SYSTEM] Log cleared</div>';
+        }
+        
+        function updateStatus(status) {
+            document.getElementById('statusDisplay').textContent = status;
+            log(`Status updated: ${status}`, 'info');
+        }
+        
+        function performAction(actionType) {
+            log(`Action triggered: ${actionType}`, 'info');
+            
+            try {
+                // Clear any existing action
+                clearCurrentAction();
+                
+                // Get character element
+                const character = document.getElementById('patientCharacter');
+                if (!character) {
+                    log('ERROR: Character element not found!', 'error');
+                    return;
+                }
+                
+                // Set current action
+                currentAction = actionType;
+                
+                // Apply action class
+                const actionClass = `action-${actionType}`;
+                character.classList.add(actionClass);
+                log(`Applied class: ${actionClass}`, 'success');
+                
+                // Update status
+                updateStatus(`Performing: ${actionType}`);
+                
+                // Set timeout to clear action (5 seconds for all actions as requested)
+                const duration = 5000;
+                log(`Action duration set: ${duration}ms`, 'info');
+                
+                actionTimeout = setTimeout(() => {
+                    clearCurrentAction();
+                }, duration);
+                
+            } catch (error) {
+                log(`ERROR performing action: ${error.message}`, 'error');
+                console.error('Action error:', error);
+            }
+        }
+        
+        function clearCurrentAction() {
+            if (currentAction) {
+                log(`Clearing action: ${currentAction}`, 'info');
+                
+                const character = document.getElementById('patientCharacter');
+                if (character) {
+                    // Remove all action classes
+                    character.className = 'patient-character';
+                    log('All action classes cleared', 'success');
+                    
+                    // Reset colors for all character parts
+                    const face = character.querySelector('.character-face');
+                    const nose = character.querySelector('.character-nose');
+                    const hands = character.querySelectorAll('.hand');
+                    const body = character.querySelector('.character-body');
+                    
+                    if (face) face.style.background = '#ffdbac';
+                    if (nose) nose.style.background = '#ffdbac';
+                    if (body) body.style.background = '#4a90e2';
+                    hands.forEach(hand => hand.style.background = '#ffdbac');
+                } else {
+                    log('ERROR: Character not found during clear', 'error');
+                }
+                
+                currentAction = null;
+                updateStatus('Ready for next action');
+                
+                if (actionTimeout) {
+                    clearTimeout(actionTimeout);
+                    actionTimeout = null;
+                }
+            }
+        }
+        
+        // Test function to verify all elements exist
+        function runDiagnostics() {
+            log('Running diagnostics...', 'info');
+            
+            const character = document.getElementById('patientCharacter');
+            const head = document.querySelector('.character-head');
+            const body = document.querySelector('.character-body');
+            const arms = document.querySelectorAll('.arm');
+            const legs = document.querySelectorAll('.leg');
+            
+            log(`Character element: ${character ? 'FOUND' : 'MISSING'}`, character ? 'success' : 'error');
+            log(`Head element: ${head ? 'FOUND' : 'MISSING'}`, head ? 'success' : 'error');
+            log(`Body element: ${body ? 'FOUND' : 'MISSING'}`, body ? 'success' : 'error');
+            log(`Arms found: ${arms.length}/2`, arms.length === 2 ? 'success' : 'error');
+            log(`Legs found: ${legs.length}/2`, legs.length === 2 ? 'success' : 'error');
+            
+            log('Diagnostics complete', 'info');
+        }
+        
+        // Action Queue Polling System
+        function startActionPolling() {
+            if (actionPollingInterval) return; // Already polling
+            
+            actionPollingInterval = setInterval(() => {
+                fetch('/get_next_action')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.current_action && data.current_action !== currentAction) {
+                            log(`Auto-triggering action: ${data.current_action}`, 'info');
+                            performAction(data.current_action);
+                        }
+                    })
+                    .catch(error => {
+                        log(`Polling error: ${error.message}`, 'error');
+                    });
+            }, 500); // Poll every 500ms
+            
+            log('Action polling started', 'success');
+        }
+        
+        function stopActionPolling() {
+            if (actionPollingInterval) {
+                clearInterval(actionPollingInterval);
+                actionPollingInterval = null;
+                log('Action polling stopped', 'info');
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded, initializing...', 'info');
+            runDiagnostics();
+            updateStatus('Ready for action testing');
+            startActionPolling(); // Start automatic action processing
+        });
+        
+        // Keyboard shortcuts for testing
+        document.addEventListener('keydown', (event) => {
+            const keyActions = {
+                '1': 'wave',
+                '2': 'cough', 
+                '3': 'headache',
+                '4': 'itch',
+                '5': 'fever',
+                '6': 'stomach',
+                '7': 'leg',
+                '8': 'dizzy',
+                '9': 'sneeze',
+                'q': 'nausea',
+                'w': 'blood'
+            };
+            
+            if (keyActions[event.key]) {
+                performAction(keyActions[event.key]);
+                log(`Keyboard shortcut used: ${event.key} -> ${keyActions[event.key]}`, 'info');
+            }
+        });
+    </script>
+</body>
+</html>

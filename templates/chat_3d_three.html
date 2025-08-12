@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Patient Character</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-container { display: flex; height: 100vh; }
+        .control-panel {
+            width: 30%; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); padding: 20px; overflow-y: auto;
+        }
+        .control-section { margin-bottom: 25px; }
+        .control-section h3 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .action-btn {
+            padding: 12px 8px; border: none; border-radius: 8px;
+            background: linear-gradient(45deg, #4CAF50, #45a049); color: white; cursor: pointer;
+            font-size: 0.9em; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(76, 175, 80, 0.4); }
+        .action-btn:active { transform: translateY(1px); background: linear-gradient(45deg, #45a049, #4CAF50); }
+        .clear-btn { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        .log-container { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8em; height: 200px; overflow-y: auto; border: 2px solid #333; }
+        .log-entry { margin-bottom: 5px; padding: 2px 0; }
+        .log-entry.success { color: #00ff00; } .log-entry.error { color: #ff4444; } .log-entry.info { color: #44aaff; }
+        .character-panel {
+            width: 70%; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+        #threeContainer { position: absolute; inset: 0; }
+        canvas { display: block; }
+        .status-display {
+            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 12px 14px;
+            border-radius: 10px; font-size: 1.0em; font-weight: bold; min-width: 200px; text-align: center;
+        }
+        .badge { position: absolute; top: 70px; left: 20px; background: rgba(255,255,255,0.85); color: #333; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; }
+    </style>
+    <script src="/static/vendor/three/three.min.js"></script>
+    <script src="/static/vendor/three/OrbitControls.js"></script>
+    <script src="/static/vendor/three/GLTFLoader.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>🎭 Character Actions</h3>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="performAction('wave')">👋 Wave</button>
+                    <button class="action-btn" onclick="performAction('cough')">😷 Cough</button>
+                    <button class="action-btn" onclick="performAction('headache')">🤕 Headache</button>
+                    <button class="action-btn" onclick="performAction('itch')">🤏 Itch</button>
+                    <button class="action-btn" onclick="performAction('fever')">🤒 Fever</button>
+                    <button class="action-btn" onclick="performAction('stomach')">🤱 Stomach</button>
+                    <button class="action-btn" onclick="performAction('leg')">🦵 Leg</button>
+                    <button class="action-btn" onclick="performAction('dizzy')">😵 Dizzy</button>
+                    <button class="action-btn" onclick="performAction('sneeze')">🤧 Sneeze</button>
+                    <button class="action-btn" onclick="performAction('nausea')">🤢 Nausea</button>
+                    <button class="action-btn" onclick="performAction('blood')">🩸 Blood</button>
+                    <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>📝 Action Log</h3>
+                <div class="log-container" id="actionLog">
+                    <div class="log-entry info">[SYSTEM] 3D scene initializing…</div>
+                </div>
+                <button class="clear-btn" onclick="clearLog()">Clear Log</button>
+            </div>
+        </div>
+        <div class="character-panel">
+            <div class="status-display" id="statusDisplay">Loading 3D model…</div>
+            <div class="badge">Left mouse: rotate • Right mouse: pan • Wheel: zoom</div>
+            <div id="threeContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Logging & status
+        let currentAction = null; let actionTimeout = null;
+        function log(msg, type='info'){ const el=document.getElementById('actionLog'); const t=new Date().toLocaleTimeString(); const d=document.createElement('div'); d.className=`log-entry ${type}`; d.textContent=`[${t}] ${msg}`; el.appendChild(d); el.scrollTop=el.scrollHeight; console[type==='error'?'error':'log'](`${type.toUpperCase()}: ${msg}`); }
+        function clearLog(){ document.getElementById('actionLog').innerHTML='<div class="log-entry info">[SYSTEM] Log cleared</div>'; }
+        function updateStatus(s){ const el=document.getElementById('statusDisplay'); if(el) el.textContent=s; log(`Status: ${s}`,'info'); }
+
+        // Three.js
+        let scene, camera, renderer, controls, clock;
+        let modelRoot=null, mixer=null, clipsByName={}, activeEffects=[], modelBBox=null, originalMaterials=[];
+        const container = document.getElementById('threeContainer');
+
+        function initThree(){
+            scene=new THREE.Scene(); scene.background=new THREE.Color(0xbfd9ff);
+            const aspect = container.clientWidth/container.clientHeight;
+            camera=new THREE.PerspectiveCamera(45, aspect, 0.1, 100); camera.position.set(1.8,1.5,3.2);
+            renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2)); renderer.setSize(container.clientWidth,container.clientHeight); renderer.shadowMap.enabled=true; container.appendChild(renderer.domElement);
+            const hemi=new THREE.HemisphereLight(0xffffff,0x444444,1.0); hemi.position.set(0,2,0); scene.add(hemi);
+            const dir=new THREE.DirectionalLight(0xffffff,1.0); dir.position.set(3,5,2); dir.castShadow=true; scene.add(dir);
+            const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0xd3f2d3,roughness:1})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+            controls=new THREE.OrbitControls(camera, renderer.domElement); controls.target.set(0,1.2,0); controls.update();
+            clock=new THREE.Clock(); window.addEventListener('resize', onResize); animate();
+        }
+        function onResize(){ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+        function animate(){ requestAnimationFrame(animate); const dt=clock.getDelta(); if(mixer) mixer.update(dt); updateEffects(dt); renderer.render(scene,camera); }
+
+        function loadModel(){
+            updateStatus('Loading 3D model…');
+            const loader=new THREE.GLTFLoader();
+            if (loader.setCrossOrigin) loader.setCrossOrigin('anonymous');
+            const MODEL_URLS=[
+                'https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb',
+                'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF-Binary/Fox.glb',
+                'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb',
+                'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb',
+                'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/AnimatedCube/glTF-Binary/AnimatedCube.glb'
+            ];
+
+            let cancelled=false;
+
+            const tryOne=(idx)=>{
+                if (idx>=MODEL_URLS.length){
+                    log('All external model URLs failed. Using fallback figure.', 'error');
+                    buildFallbackAvatar();
+                    updateStatus('Using fallback 3D figure');
+                    return;
+                }
+                const url=MODEL_URLS[idx];
+                log(`Attempting model: ${url}`,'info');
+                let timedOut=false; const timeout= setTimeout(()=>{ timedOut=true; log(`Model load timed out: ${url}`,'error'); tryOne(idx+1); }, 12000);
+                loader.load(url,(gltf)=>{
+                    if (timedOut || cancelled) return; clearTimeout(timeout);
+                    modelRoot=gltf.scene; modelRoot.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; if(o.material){ originalMaterials.push({mesh:o, mat:o.material, emissive:o.material.emissive?o.material.emissive.clone():null}); } } });
+                    modelRoot.scale.set(1.2,1.2,1.2); scene.add(modelRoot);
+                    modelBBox=new THREE.Box3().setFromObject(modelRoot); const minY=modelBBox.min.y; modelRoot.position.y-=minY;
+                    if(gltf.animations && gltf.animations.length){ mixer=new THREE.AnimationMixer(modelRoot); gltf.animations.forEach(c=>{clipsByName[c.name]=c;}); const idle=clipsByName['Idle']||gltf.animations[0]; if(idle){ mixer.clipAction(idle).play(); } log(`Loaded clips: ${gltf.animations.map(a=>a.name).join(', ')}`,'success'); }
+                    updateStatus('Ready for action testing'); log('Model loaded successfully','success');
+                },(xhr)=>{
+                    if (timedOut || cancelled) return; if(xhr.total){ updateStatus(`Loading 3D model… ${((xhr.loaded/xhr.total)*100).toFixed(0)}%`);} else { updateStatus('Loading 3D model…'); }
+                },(err)=>{
+                    if (timedOut || cancelled) return; clearTimeout(timeout); log(`Model load error on ${url}: ${err}`,'error'); tryOne(idx+1);
+                });
+            };
+            tryOne(0);
+
+            // In case everything stalls before loader callbacks
+            setTimeout(()=>{ if(!modelRoot){ log('Model still not loaded after 30s. Falling back.', 'error'); cancelled=true; buildFallbackAvatar(); updateStatus('Using fallback 3D figure'); } }, 30000);
+        }
+
+        function buildFallbackAvatar(){
+            const group = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a90e2, metalness: 0.1, roughness: 0.8 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, metalness: 0.0, roughness: 0.9 });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 24), skinMat);
+            head.position.set(0, 1.6, 0);
+            const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.5, 8, 16), bodyMat);
+            torso.position.set(0, 1.1, 0);
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 16), skinMat);
+            leftArm.position.set(-0.35, 1.2, 0); leftArm.rotation.z = Math.PI/2 * 0.12;
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 16), skinMat);
+            rightArm.position.set(0.35, 1.2, 0); rightArm.rotation.z = -Math.PI/2 * 0.12;
+            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.6, 16), bodyMat);
+            leftLeg.position.set(-0.12, 0.6, 0);
+            const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.6, 16), bodyMat);
+            rightLeg.position.set(0.12, 0.6, 0);
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            scene.add(group);
+            modelRoot = group;
+            modelBBox = new THREE.Box3().setFromObject(group);
+        }
+
+        function getAttachmentPosition(kind='head'){
+            if(!modelBBox) return new THREE.Vector3(0,1.6,0);
+            const size=modelBBox.getSize(new THREE.Vector3()); const min=modelBBox.min, max=modelBBox.max; const base=new THREE.Vector3((min.x+max.x)/2,0,(min.z+max.z)/2);
+            switch(kind){
+                case 'head': return new THREE.Vector3(base.x, max.y - size.y*0.1, base.z);
+                case 'mouth': return new THREE.Vector3(base.x, max.y - size.y*0.18, base.z+0.12);
+                case 'chest': return new THREE.Vector3(base.x, min.y + size.y*0.55, base.z+0.05);
+                case 'stomach': return new THREE.Vector3(base.x, min.y + size.y*0.40, base.z+0.05);
+                case 'rightArm': return new THREE.Vector3(max.x - size.x*0.05, min.y + size.y*0.60, base.z);
+                default: return new THREE.Vector3(base.x, min.y + size.y*0.50, base.z);
+            }
+        }
+
+        function addOrbitingStar(durationSec=5){ const tex=generateStarTexture(); const mat=new THREE.SpriteMaterial({map:tex,transparent:true}); const sprite=new THREE.Sprite(mat); const head=getAttachmentPosition('head'); sprite.scale.set(0.2,0.2,0.2); scene.add(sprite); let t=0; activeEffects.push({kind:'dizzy',sprite,update:(dt)=>{ t+=dt; const r=0.3, speed=2.5, a=t*speed; sprite.position.set(head.x+Math.cos(a)*r, head.y+0.08+Math.sin(a*1.2)*0.05, head.z+Math.sin(a)*r); }, ttl:durationSec}); }
+        function emitParticles({color=0xffffff,from='mouth',count=25,spread=0.12,gravity=-0.6,speed=0.8,life=1.2}){
+            const ps=[], origin=getAttachmentPosition(from);
+            for(let i=0;i<count;i++){ const m=new THREE.SpriteMaterial({color,transparent:true,opacity:1}); const s=new THREE.Sprite(m); s.scale.set(0.04+Math.random()*0.06,0.04+Math.random()*0.06,1); s.position.copy(origin); scene.add(s); const vx=(Math.random()-0.5)*spread*speed, vy=Math.random()*spread*speed*0.6, vz=(Math.random()-0.5)*spread*speed; ps.push({sprite:s,vx,vy,vz,life:life*(0.7+Math.random()*0.6)}); }
+            activeEffects.push({kind:'particles', update:(dt)=>{ ps.forEach(p=>{ p.vy+=gravity*dt*0.2; p.sprite.position.x+=p.vx*dt; p.sprite.position.y+=p.vy*dt; p.sprite.position.z+=p.vz*dt; p.life-=dt; p.sprite.material.opacity=Math.max(0,Math.min(1,p.life)); }); }, ttl:Math.max(...ps.map(p=>p.life)), cleanup:()=>ps.forEach(p=>{ scene.remove(p.sprite); p.sprite.material.dispose(); })});
+        }
+        function thermometerEffect(durationSec=5){ const g=new THREE.CylinderGeometry(0.01,0.01,0.25,12); const m=new THREE.MeshStandardMaterial({color:0xff4444,emissive:0x550000}); const tube=new THREE.Mesh(g,m); const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.025,16,16),m); const mouth=getAttachmentPosition('mouth'); tube.position.copy(mouth).add(new THREE.Vector3(0.1,-0.02,0)); bulb.position.copy(tube.position).add(new THREE.Vector3(0,-0.14,0)); scene.add(tube); scene.add(bulb); activeEffects.push({kind:'thermometer', ttl:durationSec, cleanup:()=>{ scene.remove(tube); scene.remove(bulb); g.dispose(); m.dispose(); }}); }
+        function blinkOverlay(kind='chest', color=0xffd54f, durationSec=5){ const tex=generateCircleTexture(); const mat=new THREE.SpriteMaterial({map:tex,color,transparent:true,opacity:0.9}); const spr=new THREE.Sprite(mat); spr.position.copy(getAttachmentPosition(kind)); spr.scale.set(0.35,0.35,0.35); scene.add(spr); let t=0; activeEffects.push({kind:'blink', sprite:spr, update:(dt)=>{ t+=dt; spr.material.opacity=0.5+0.4*Math.abs(Math.sin(t*6)); }, ttl:durationSec, cleanup:()=>{ scene.remove(spr); mat.dispose(); }}); }
+        function setFeverTint(on){ originalMaterials.forEach(({mesh,emissive})=>{ const mat=mesh.material; if(!mat||!mat.isMeshStandardMaterial) return; if(on){ mat.emissive=new THREE.Color(0x772222); mat.emissiveIntensity=0.6; } else if(emissive){ mat.emissive.copy(emissive); mat.emissiveIntensity=1.0; } }); }
+        function clearEffects(){ activeEffects.forEach(e=>{ if(e.cleanup) e.cleanup(); }); activeEffects=[]; }
+        function updateEffects(dt){ for(let i=activeEffects.length-1;i>=0;i--){ const e=activeEffects[i]; if(e.update) e.update(dt); e.ttl-=dt; if(e.ttl<=0){ if(e.cleanup) e.cleanup(); activeEffects.splice(i,1); } } }
+
+        function fadeOutAllActions(){ if(!mixer) return; Object.values(clipsByName).forEach(clip=>{ const a=mixer.existingAction(clip, modelRoot); if(a) a.fadeOut(0.2); }); }
+        function playClip(name,{loopOnce=true}={}){ if(!mixer||!clipsByName[name]){ log(`Clip '${name}' not found`,'info'); return null; } fadeOutAllActions(); const a=mixer.clipAction(clipsByName[name]); a.reset(); if(loopOnce){ a.setLoop(THREE.LoopOnce,1); a.clampWhenFinished=true; } a.fadeIn(0.2).play(); return a; }
+
+        function performAction(type){
+            log(`Action triggered: ${type}`,'info'); clearCurrentAction(); currentAction=type; updateStatus(`Performing: ${type}`);
+            const duration=5000;
+            switch(type){
+                case 'wave': playClip('Wave')||playClip('Dance')||playClip('Walk',{loopOnce:false}); break;
+                case 'leg': playClip('Run',{loopOnce:false})||playClip('Walk',{loopOnce:false}); break;
+                case 'headache': { let t=0; const wobble={ttl:duration/1000, update:(dt)=>{ if(!modelRoot) return; t+=dt; modelRoot.rotation.z=Math.sin(t*6)*0.06; }, cleanup:()=>{ if(modelRoot) modelRoot.rotation.z=0; } }; activeEffects.push(wobble); blinkOverlay('head',0xff6666,duration/1000); break; }
+                case 'itch': playClip('Walk',{loopOnce:false}); break;
+                case 'fever': setFeverTint(true); thermometerEffect(duration/1000); break;
+                case 'stomach': blinkOverlay('stomach',0xffd54f,duration/1000); break;
+                case 'chest': blinkOverlay('chest',0xff6666,duration/1000); break;
+                case 'dizzy': addOrbitingStar(duration/1000); break;
+                case 'sneeze': emitParticles({color:0x99ccff,from:'mouth',count:30,spread:0.4,gravity:-0.8,speed:1.2,life:1.6}); break;
+                case 'cough': emitParticles({color:0xffffff,from:'mouth',count:20,spread:0.3,gravity:-0.5,speed:1.1,life:1.2}); break;
+                case 'nausea': emitParticles({color:0x3cb371,from:'mouth',count:35,spread:0.25,gravity:-2.0,speed:0.6,life:1.8}); break;
+                case 'blood': emitParticles({color:0x8b0000,from:'rightArm',count:25,spread:0.18,gravity:-2.5,speed:0.5,life:1.5}); emitParticles({color:0x8b0000,from:'stomach',count:18,spread:0.16,gravity:-2.2,speed:0.5,life:1.4}); break;
+                default: break;
+            }
+            actionTimeout=setTimeout(()=>{ clearCurrentAction(); }, duration);
+        }
+        function clearCurrentAction(){ if(!currentAction) return; log(`Clearing action: ${currentAction}`,'info'); currentAction=null; if(mixer){ const idle=clipsByName['Idle']; if(idle){ fadeOutAllActions(); mixer.clipAction(idle).reset().fadeIn(0.2).play(); } } setFeverTint(false); clearEffects(); updateStatus('Ready for next action'); if(actionTimeout){ clearTimeout(actionTimeout); actionTimeout=null; } }
+
+        document.addEventListener('keydown',(e)=>{ const m={'1':'wave','2':'cough','3':'headache','4':'itch','5':'fever','6':'stomach','7':'leg','8':'dizzy','9':'sneeze','q':'nausea','w':'blood'}; if(m[e.key]){ performAction(m[e.key]); log(`Keyboard: ${e.key} -> ${m[e.key]}`,'info'); } });
+
+        function generateCircleTexture(){ const s=128, c=document.createElement('canvas'); c.width=c.height=s; const ctx=c.getContext('2d'); const g=ctx.createRadialGradient(s/2,s/2,s*0.1,s/2,s/2,s*0.5); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=g; ctx.fillRect(0,0,s,s); const t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t; }
+        function generateStarTexture(){ const s=128,c=document.createElement('canvas'); c.width=c.height=s; const x=c.getContext('2d'); x.translate(s/2,s/2); x.rotate(-Math.PI/10); x.fillStyle='rgba(255,215,0,1)'; x.beginPath(); for(let i=0;i<5;i++){ x.lineTo(0,-s*0.45); x.translate(0,-s*0.18); x.rotate(Math.PI/5); x.lineTo(0,s*0.18); x.translate(0,s*0.18); x.rotate(-3*Math.PI/5);} x.fill(); const t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t; }
+
+        window.addEventListener('DOMContentLoaded',()=>{ log('Initializing Three.js…','info'); initThree(); loadModel(); });
+    </script>
+</body>
+</html>
+

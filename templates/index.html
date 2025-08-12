@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Patient Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            max-width: 800px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 0;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header p {
+            margin: 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .mobile-warning {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instructions h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .instructions ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .primary-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 24px 32px;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .primary-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .primary-button:hover::before {
+            left: 100%;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .primary-button:active {
+            transform: translateY(-2px);
+        }
+
+        .primary-button:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .secondary-button {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            border: none;
+            padding: 20px 28px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.3);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .secondary-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(243, 156, 18, 0.4);
+        }
+
+        .tertiary-button {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tertiary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(149, 165, 166, 0.4);
+        }
+
+        .button-section {
+            margin-bottom: 30px;
+        }
+
+        .button-section h3 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .patient-preview {
+            display: none;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 1px solid #dee2e6;
+        }
+
+        .patient-preview h3 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .patient-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .chief-complaint {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 20px 0;
+        }
+
+        .chief-complaint strong {
+            color: #1976d2;
+            font-size: 1.1rem;
+        }
+
+        .start-consultation-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .start-consultation-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+
+        .modal-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .modal-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-body ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .modal-body li {
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+
+        .modal-body ol {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .modal-body h3 {
+            color: #495057;
+            margin: 20px 0 15px 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .modal-body h4 {
+            color: #495057;
+            margin: 15px 0 10px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-body p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .feedback-question {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .feedback-question h3 {
+            color: #495057;
+            margin: 0 0 20px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .likert-scale {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        .likert-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .likert-option input[type="radio"] {
+            display: none;
+        }
+
+        .likert-option label {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .likert-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .likert-option:hover label {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .likert-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 35px;
+        }
+
+        .modal-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .close {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .main-card {
+                padding: 25px;
+            }
+            
+            .button-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .primary-button {
+                padding: 20px 24px;
+                font-size: 1.1rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medical Patient Simulator</h1>
+            <p>Practice clinical reasoning with AI-powered virtual patients</p>
+        </div>
+        
+        <div class="main-card">
+            <div class="mobile-warning">
+                📱 <strong>Mobile Users:</strong> For best experience, rotate your device to landscape mode or use a laptop/desktop computer.
+            </div>
+            
+            <div class="instructions">
+                <h3>🎯 Instructions for Medical Students</h3>
+                <p>Choose your preferred interface below to generate a random patient case. Each patient is created with realistic symptoms taken from NHS UK for our medical database and unique personality traits. Take a thorough history, ask appropriate questions, and then give your diagnosis.</p>
+                <br>
+                <p><strong>Available Versions:</strong></p>
+                <ul>
+                    <li><strong>💬 Text Chat Only:</strong> Pure text-based chat interface (no visual character)</li>
+                    <li><strong>🎭 3D Avatar Chat:</strong> Fun 3D character with procedural generation and animations</li>
+                </ul>
+            </div>
+            
+            <div class="button-section">
+                <h3>🚀 Main Interface Options</h3>
+                <div class="button-grid">
+                                        <button class="primary-button" id="generateBtn" onclick="generatePatient()">
+                        💬 Text Only Chat
+                    </button>
+                    <button class="primary-button" onclick="generateProcedural3DPatient()">
+                        🎭 3D Avatar Chat
+                    </button>
+                </div>
+            </div>
+            
+            <div class="button-section">
+                <h3>📚 Additional Resources</h3>
+                <div class="button-grid">
+                    <button class="secondary-button" onclick="openDataGuideModal()">
+                        📖 Play Guide
+                    </button>
+                    <button class="secondary-button" onclick="openFeedbackModal()">
+                        📝 Give Feedback
+                    </button>
+                </div>
+            </div>
+            
+            <div class="button-section">
+                <h3>🧪 Experimental Features</h3>
+                <div class="button-grid">
+                    <button class="tertiary-button" onclick="generateOriginal2DPatient()">
+                        Test Actions 2D
+                    </button>
+                    <button class="tertiary-button" onclick="generateAdvanced3DPatient()">
+                        Test Actions 3D
+                    </button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                🔄 Generating your patient case...
+            </div>
+            
+            <div class="patient-preview" id="patientPreview">
+                <h3 id="patientName">Patient Name</h3>
+                <div class="patient-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Age</div>
+                        <div class="detail-value" id="patientAge">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Gender</div>
+                        <div class="detail-value" id="patientGender">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Occupation</div>
+                        <div class="detail-value" id="patientOccupation">-</div>
+                    </div>
+                </div>
+                <div class="chief-complaint">
+                    <strong>Chief Complaint:</strong><br>
+                    <span id="chiefComplaint">-</span>
+                </div>
+                <button class="start-consultation-btn" onclick="startConsultation()">
+                    🚀 Start Consultation →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generatePatient() {
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const patientPreview = document.getElementById('patientPreview');
+            
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.textContent = '🔄 Generating...';
+            loading.style.display = 'block';
+            patientPreview.style.display = 'none';
+            
+            // Call the generate patient endpoint
+            fetch('/generate_patient')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to pure text chat page
+                        window.location.href = '/chat';
+                    } else {
+                        alert('Error generating patient. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error generating patient. Please try again.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '💬 Text Chat Only';
+                    loading.style.display = 'none';
+                });
+        }
+        
+        function generateOriginal2DPatient() {
+            const buttons = document.querySelectorAll('.primary-button, .secondary-button, .tertiary-button');
+            const loading = document.getElementById('loading');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            loading.style.display = 'block';
+            
+            fetch('/generate_patient')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/chat_2d';
+                    } else {
+                        alert('Error generating patient. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error generating patient. Please try again.');
+                })
+                .finally(() => {
+                    buttons.forEach(btn => btn.disabled = false);
+                    loading.style.display = 'none';
+                });
+        }
+
+        function generateProcedural3DPatient() {
+            const buttons = document.querySelectorAll('.primary-button, .secondary-button, .tertiary-button');
+            const loading = document.getElementById('loading');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            loading.style.display = 'block';
+            
+            fetch('/generate_patient')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/chat_3d_procedural';
+                    } else {
+                        alert('Error generating patient. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error generating patient. Please try again.');
+                })
+                .finally(() => {
+                    buttons.forEach(btn => btn.disabled = false);
+                    loading.style.display = 'none';
+                });
+        }
+
+        function generateAdvanced3DPatient() {
+            const buttons = document.querySelectorAll('.primary-button, .secondary-button, .tertiary-button');
+            const loading = document.getElementById('loading');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            loading.style.display = 'block';
+            
+            fetch('/generate_patient')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/chat_3d_avatar';
+                    } else {
+                        alert('Error generating patient. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error generating patient. Please try again.');
+                })
+                .finally(() => {
+                    buttons.forEach(btn => btn.disabled = false);
+                    loading.style.display = 'none';
+                });
+        }
+        
+        function startConsultation() {
+            window.location.href = '/chat';
+        }
+
+        // Data Guide Modal Functions
+        function openDataGuideModal() {
+            document.getElementById('dataGuideModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDataGuideModal() {
+            document.getElementById('dataGuideModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Feedback Modal Functions
+        function openFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('feedbackForm').reset();
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const dataGuideModal = document.getElementById('dataGuideModal');
+            const feedbackModal = document.getElementById('feedbackModal');
+            if (event.target === dataGuideModal) {
+                closeDataGuideModal();
+            }
+            if (event.target === feedbackModal) {
+                closeFeedbackModal();
+            }
+        }
+        
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const feedbackData = {
+                    authenticity_rating: formData.get('authenticity_rating'),
+                    educational_value_rating: formData.get('educational_value_rating'),
+                    interaction_quality_rating: formData.get('interaction_quality_rating'),
+                    communication_consistency_rating: formData.get('communication_consistency_rating'),
+                    symptom_realism_rating: formData.get('symptom_realism_rating'),
+                    additional_comments: formData.get('additional_comments')
+                };
+                
+                // Validate that all required ratings are selected
+                const requiredFields = ['authenticity_rating', 'educational_value_rating', 'interaction_quality_rating', 
+                                      'communication_consistency_rating', 'symptom_realism_rating'];
+                const missingFields = requiredFields.filter(field => !feedbackData[field]);
+                
+                if (missingFields.length > 0) {
+                    alert('Please rate all 5 questions before submitting.');
+                    return;
+                }
+                
+                // Submit feedback
+                fetch('/submit_feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(feedbackData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Thank you for your feedback! It will help us improve the simulator.');
+                        closeFeedbackModal();
+                        setTimeout(() => {
+                            const currentUrl = window.location.href.split('?')[0];
+                            window.history.replaceState({}, document.title, currentUrl);
+                        }, 100);
+                    } else {
+                        alert('Error submitting feedback. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error submitting feedback. Please try again.');
+                });
+            });
+        });
+    </script>
+    
+    <!-- Data Guide Modal -->
+    <div id="dataGuideModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeDataGuideModal()">&times;</span>
+                <h2>📚 Data Guide & How to Play</h2>
+                <p>Complete guide to using the Medical Patient Simulator</p>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: left;">
+                    <h3>🎯 How to Play the Game</h3>
+                    <p><strong>Objective:</strong> Practice clinical reasoning by taking patient history, asking appropriate questions, and making diagnoses.</p>
+                    
+                    <h4>📋 Step-by-Step Process:</h4>
+                    <ol>
+                        <li><strong>Generate Patient:</strong> Click one of the main buttons to create a random patient case</li>
+                        <li><strong>Review Patient Info:</strong> Read the patient's basic information and chief complaint</li>
+                        <li><strong>Start Consultation:</strong> Begin asking questions to gather medical history</li>
+                        <li><strong>Ask Follow-up Questions:</strong> Use the patient's responses to guide your next questions</li>
+                        <li><strong>Generate MCQs:</strong> Create quiz questions to test your understanding</li>
+                        <li><strong>Submit Diagnosis:</strong> Make your final diagnosis based on gathered information</li>
+                        <li><strong>Get Feedback:</strong> Receive AI-generated feedback on your approach</li>
+                    </ol>
+
+                    <h3>🔧 Button Functions & Features</h3>
+                    
+                    <h4>💬 Text Chat Only:</h4>
+                    <ul>
+                        <li><strong>Pure text interface</strong> - No visual distractions</li>
+                        <li><strong>Focus on communication</strong> and clinical reasoning</li>
+                        <li><strong>Best for:</strong> Medical students, clinical practice, exam preparation</li>
+                    </ul>
+
+                    <h4>🎭 3D Avatar Chat:</h4>
+                    <ul>
+                        <li><strong>3D character visualization</strong> with realistic proportions</li>
+                        <li><strong>Procedural generation</strong> - Each patient looks unique</li>
+                        <li><strong>Interactive animations</strong> based on conversation context</li>
+                        <li><strong>Best for:</strong> Immersive training, patient interaction practice</li>
+                    </ul>
+
+                    <h4>🧪 Test Buttons (Small Corner Buttons):</h4>
+                    <ul>
+                        <li><strong>Test 2D:</strong> 2D animated character interface (experimental)</li>
+                        <li><strong>Test 3D:</strong> Advanced 3D character with enhanced features (experimental)</li>
+                        <li><strong>Purpose:</strong> Testing new features and experimental interfaces</li>
+                    </ul>
+
+                    <h3>🎮 Chat Interface Controls</h3>
+                    
+                    <h4>📝 Text Input:</h4>
+                    <ul>
+                        <li><strong>Type your questions</strong> in natural language</li>
+                        <li><strong>Ask about:</strong> Symptoms, medical history, family history, social factors</li>
+                        <li><strong>Examples:</strong> "What brings you in today?", "How long have you had this pain?", "Any family history of heart disease?"</li>
+                    </ul>
+
+                    <h4>🔘 Action Buttons:</h4>
+                    <ul>
+                        <li><strong>Generate MCQ:</strong> Create quiz questions based on current case</li>
+                        <li><strong>Submit Diagnosis:</strong> Enter your final diagnosis</li>
+                        <li><strong>Get Hint:</strong> Receive AI-generated guidance</li>
+                        <li><strong>New Patient:</strong> Start with a different case</li>
+                        <li><strong>Reset Chat:</strong> Clear conversation history</li>
+                    </ul>
+
+                    <h3>📊 Data Sources & AI Models</h3>
+                    
+                    <h4>🏥 Medical Database:</h4>
+                    <ul>
+                        <li><strong>NHS symptom database</strong> - Realistic medical conditions</li>
+                        <li><strong>15+ disease categories</strong> with detailed symptom profiles</li>
+                        <li><strong>Evidence-based medicine</strong> from reliable sources</li>
+                    </ul>
+
+                    <h4>🤖 AI Technology:</h4>
+                    <ul>
+                        <li><strong>OpenRouter API</strong> - Access to multiple AI models</li>
+                        <li><strong>Mistral, Llama, Qwen</strong> - Advanced language models</li>
+                        <li><strong>Context-aware responses</strong> based on patient personality</li>
+                        <li><strong>Consistent character behavior</strong> throughout conversation</li>
+                    </ul>
+
+                    <h4>🎭 Personality System:</h4>
+                    <ul>
+                        <li><strong>5 personality types:</strong> Anxious, Confident, Reserved, Talkative, Neutral</li>
+                        <li><strong>Communication styles:</strong> Formal, Casual, Technical</li>
+                        <li><strong>Emotional responses</strong> based on symptoms and personality</li>
+                        <li><strong>Realistic patient behavior</strong> that maintains consistency</li>
+                    </ul>
+
+                    <h3>💡 Pro Tips for Success</h3>
+                    <ul>
+                        <li><strong>Start broad:</strong> Ask open-ended questions first</li>
+                        <li><strong>Follow the patient's lead:</strong> Use their responses to guide follow-up questions</li>
+                        <li><strong>Think systematically:</strong> Cover all aspects of medical history</li>
+                        <li><strong>Use the MCQ feature:</strong> Test your understanding as you go</li>
+                        <li><strong>Practice regularly:</strong> Each case is different and offers new learning opportunities</li>
+                    </ul>
+
+                    <h3>🔍 Troubleshooting</h3>
+                    <ul>
+                        <li><strong>If chat seems stuck:</strong> Try refreshing the page or starting a new patient</li>
+                        <li><strong>If 3D doesn't load:</strong> Ensure your browser supports WebGL and try a different browser</li>
+                        <li><strong>For mobile users:</strong> Rotate to landscape mode for better experience</li>
+                        <li><strong>Performance issues:</strong> Close other browser tabs and applications</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeFeedbackModal()">&times;</span>
+                <h2>💬 Session Feedback</h2>
+                <p>Help us improve the Medical Patient Simulator</p>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <!-- Question 1: Authenticity -->
+                    <div class="feedback-question">
+                        <h3>1. How believable did the virtual patient feel?</h3>
+                        <div class="likert-scale">
+                            <div class="likert-option">
+                                <input type="radio" id="auth1" name="authenticity_rating" value="1" required>
+                                <label for="auth1">1</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="auth2" name="authenticity_rating" value="2">
+                                <label for="auth2">2</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="auth3" name="authenticity_rating" value="3">
+                                <label for="auth3">3</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="auth4" name="authenticity_rating" value="4">
+                                <label for="auth4">4</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="auth5" name="authenticity_rating" value="5">
+                                <label for="auth5">5</label>
+                            </div>
+                        </div>
+                        <div class="likert-labels">
+                            <span>Not believable at all</span>
+                            <span>Very believable</span>
+                        </div>
+                    </div>
+
+                    <!-- Question 2: Educational Value -->
+                    <div class="feedback-question">
+                        <h3>2. How useful was this simulation for medical training?</h3>
+                        <div class="likert-scale">
+                            <div class="likert-option">
+                                <input type="radio" id="edu1" name="educational_value_rating" value="1" required>
+                                <label for="edu1">1</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="edu2" name="educational_value_rating" value="2">
+                                <label for="edu2">2</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="edu3" name="educational_value_rating" value="3">
+                                <label for="edu3">3</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="edu4" name="educational_value_rating" value="4">
+                                <label for="edu4">4</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="edu5" name="educational_value_rating" value="5">
+                                <label for="edu5">5</label>
+                            </div>
+                        </div>
+                        <div class="likert-labels">
+                            <span>Not useful at all</span>
+                            <span>Very useful</span>
+                        </div>
+                    </div>
+
+                    <!-- Question 3: Interaction Quality -->
+                    <div class="feedback-question">
+                        <h3>3. How realistic was the overall conversation?</h3>
+                        <div class="likert-scale">
+                            <div class="likert-option">
+                                <input type="radio" id="qual1" name="interaction_quality_rating" value="1" required>
+                                <label for="qual1">1</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="qual2" name="interaction_quality_rating" value="2">
+                                <label for="qual2">2</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="qual3" name="interaction_quality_rating" value="3">
+                                <label for="qual3">3</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="qual4" name="interaction_quality_rating" value="4">
+                                <label for="qual4">4</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="qual5" name="interaction_quality_rating" value="5">
+                                <label for="qual5">5</label>
+                            </div>
+                        </div>
+                        <div class="likert-labels">
+                            <span>Not realistic at all</span>
+                            <span>Very realistic</span>
+                        </div>
+                    </div>
+
+                    <!-- Question 4: Communication Consistency -->
+                    <div class="feedback-question">
+                        <h3>4. How consistently did the patient maintain their personality?</h3>
+                        <div class="likert-scale">
+                            <div class="likert-option">
+                                <input type="radio" id="cons1" name="communication_consistency_rating" value="1" required>
+                                <label for="cons1">1</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="cons2" name="communication_consistency_rating" value="2">
+                                <label for="cons2">2</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="cons3" name="communication_consistency_rating" value="3">
+                                <label for="cons3">3</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="cons4" name="communication_consistency_rating" value="4">
+                                <label for="cons4">4</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="cons5" name="communication_consistency_rating" value="5">
+                                <label for="cons5">5</label>
+                            </div>
+                        </div>
+                        <div class="likert-labels">
+                            <span>Very inconsistent</span>
+                            <span>Very consistent</span>
+                        </div>
+                    </div>
+
+                    <!-- Question 5: Symptom Realism -->
+                    <div class="feedback-question">
+                        <h3>5. How realistic were the patient's symptoms and medical presentation?</h3>
+                        <div class="likert-scale">
+                            <div class="likert-option">
+                                <input type="radio" id="symp1" name="symptom_realism_rating" value="1" required>
+                                <label for="symp1">1</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="symp2" name="symptom_realism_rating" value="2">
+                                <label for="symp2">2</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="symp3" name="symptom_realism_rating" value="3">
+                                <label for="symp3">3</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="symp4" name="symptom_realism_rating" value="4">
+                                <label for="symp4">4</label>
+                            </div>
+                            <div class="likert-option">
+                                <input type="radio" id="symp5" name="symptom_realism_rating" value="5">
+                                <label for="symp5">5</label>
+                            </div>
+                        </div>
+                        <div class="likert-labels">
+                            <span>Not realistic at all</span>
+                            <span>Very realistic</span>
+                        </div>
+                    </div>
+
+                    <!-- Additional Comments -->
+                    <div class="feedback-question">
+                        <h3>6. Additional comments or suggestions:</h3>
+                        <textarea class="text-input" name="additional_comments" placeholder="Share any additional thoughts, suggestions, or specific feedback about your experience..."></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="modal-btn cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
+                        <button type="submit" class="modal-btn submit-btn">Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

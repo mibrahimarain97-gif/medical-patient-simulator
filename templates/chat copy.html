@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation with {{ patient_data.name }}</title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            height: 85vh;
+        }
+        
+        /* Left Panel - Character */
+        .character-panel {
+            background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .patient-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .patient-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .patient-details {
+            color: #6c757d;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        .character {
+            width: 200px;
+            height: 200px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .debug-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            display: none;
+        }
+        
+        .debug-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            cursor: pointer;
+        }
+        
+        .action-pill {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        /* Center Panel - Chat */
+        .chat-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .message.doctor {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .doctor .message-avatar {
+            background: #28a745;
+        }
+        
+        .patient .message-avatar {
+            background: #dc3545;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+        
+        .doctor .message-content {
+            background: #28a745;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .patient .message-content {
+            background: white;
+            color: #495057;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        
+        .message-input:focus {
+            border-color: #007bff;
+        }
+        
+        .send-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: #0056b3;
+        }
+        
+        .send-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: none;
+            color: #6c757d;
+            font-style: italic;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        /* Right Panel - Quiz & Tools */
+        .quiz-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .panel-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .quiz-section {
+            margin-bottom: 25px;
+        }
+        
+        .quiz-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+        
+        .diagnosis-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .diagnosis-input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        
+        .quiz-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 5px 5px 5px 0;
+            transition: background-color 0.3s ease;
+        }
+        
+        .quiz-btn:hover {
+            background: #0056b3;
+        }
+        
+        .quiz-btn.hint-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .quiz-btn.hint-btn:hover {
+            background: #e0a800;
+        }
+        
+        .quiz-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .quiz-result.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .quiz-result.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hint-display {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .mcq-question {
+            margin-bottom: 20px;
+        }
+        
+        .mcq-question h5 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .mcq-option {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mcq-option:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+        }
+        
+        .mcq-option.selected {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        
+        .notes-section {
+            margin-top: 20px;
+        }
+        
+        .notes-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 0.9em;
+        }
+        
+        .notes-textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        
+        .progress-indicator {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            background: #28a745;
+            height: 100%;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .symptom-tracker {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .symptom-tracker h5 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .symptom-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .symptom-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9em;
+        }
+        
+        .symptom-item:last-child {
+            border-bottom: none;
+        }
+        
+        .symptom-item.revealed {
+            color: #28a745;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Panel - Character -->
+        <div class="character-panel">
+            <div class="patient-info">
+                <div class="patient-name">{{ patient_data.name }}</div>
+                <div class="patient-details">
+                    Age: {{ patient_data.age }}<br>
+                    Gender: {{ patient_data.gender }}<br>
+                    Occupation: {{ patient_data.occupation }}<br>
+                    Personality: {{ patient_data.personality_type.replace('_', ' ').title() }}
+                </div>
+            </div>
+            
+            <div class="character" id="character">
+                <lottie-player 
+                    id="characterPlayer"
+                    src="/static/avatars/idle.json"
+                    background="transparent"
+                    speed="1"
+                    style="width: 200px; height: 200px;"
+                    loop 
+                    autoplay>
+                </lottie-player>
+                
+                <button class="debug-toggle" onclick="toggleDebug()">Debug</button>
+                <div class="debug-bar" id="debugBar">
+                    <div>Persona: <span id="currentPersona">{{ patient_data.personality_type }}</span></div>
+                    <div>State: <span id="currentState">idle</span></div>
+                </div>
+                <div class="action-pill" id="actionPill" style="display: none;">Action</div>
+            </div>
+            
+            <div class="progress-indicator">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <small style="text-align: center; color: #6c757d;">Consultation Progress</small>
+        </div>
+        
+        <!-- Center Panel - Chat -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h2>Medical Consultation</h2>
+                <p>Begin your consultation with {{ patient_data.name }}</p>
+                
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="resetConversation()">Reset</button>
+                    <button class="btn btn-secondary" onclick="newPatient()">New Patient</button>
+                    <button class="btn btn-secondary" onclick="goHome()">← Home</button>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messages">
+                <!-- Messages will be added here -->
+            </div>
+            
+            <div class="typing-indicator" id="typing">
+                {{ patient_data.name }} is typing...
+            </div>
+            
+            <div class="input-area">
+                <input type="text" class="message-input" id="messageInput" 
+                       placeholder="Type your question to the patient..." 
+                       onkeypress="handleKeyPress(event)">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        
+        <!-- Right Panel - Quiz & Tools -->
+        <div class="quiz-panel">
+            <div class="panel-header">
+                🩺 Medical Tools
+            </div>
+            
+            <div class="panel-content">
+                <!-- Symptom Tracker -->
+                <div class="symptom-tracker">
+                    <h5>📋 Symptoms Discovered</h5>
+                    <ul class="symptom-list" id="symptomList">
+                        <li class="symptom-item">Start asking questions to discover symptoms...</li>
+                    </ul>
+                </div>
+                
+                <!-- Diagnosis Section -->
+                <div class="quiz-section">
+                    <h4>🎯 Diagnosis</h4>
+                    <input type="text" class="diagnosis-input" id="diagnosisInput" 
+                           placeholder="Enter your diagnosis...">
+                    <button class="quiz-btn" onclick="submitDiagnosis()">Submit Diagnosis</button>
+                    <button class="quiz-btn hint-btn" onclick="getHint()">Get Hint</button>
+                    
+                    <div id="diagnosisResult" class="quiz-result" style="display: none;"></div>
+                    <div id="hintDisplay" class="hint-display" style="display: none;"></div>
+                </div>
+                
+                <!-- MCQ Section -->
+                <div class="quiz-section">
+                    <h4>📝 Quick Quiz</h4>
+                    <button class="quiz-btn" onclick="generateMCQ()">Generate MCQ</button>
+                    <div id="mcqContainer" style="display: none;">
+                        <!-- MCQ questions will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <h4>📝 Clinical Notes</h4>
+                    <textarea class="notes-textarea" id="clinicalNotes" 
+                              placeholder="Take notes during your consultation..."></textarea>
+                    <button class="quiz-btn" onclick="saveNotes()">Save Notes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const patientName = '{{ patient_data.name }}';
+        const patientData = {
+            name: '{{ patient_data.name }}',
+            age: {{ patient_data.age }},
+            personality: '{{ patient_data.personality_type }}',
+            condition: '{{ patient_data.condition_name }}',
+            symptoms: {{ patient_data.symptoms | tojson }}
+        };
+
+        let currentState = 'idle';
+        let debugMode = false;
+        let discoveredSymptoms = new Set();
+        let messageCount = 0;
+
+        // Animation state management
+        function triggerState(state) {
+            if (currentState === state) return;
+            
+            currentState = state;
+            updateDebugInfo();
+            
+            const player = document.getElementById('characterPlayer');
+            const actionPill = document.getElementById('actionPill');
+            
+            // Show action pill
+            actionPill.textContent = state.charAt(0).toUpperCase() + state.slice(1);
+            actionPill.style.display = 'inline-block';
+            setTimeout(() => actionPill.style.display = 'none', 3000);
+            
+            // Load and play animation
+            const animationPath = `/static/avatars/${state}.json`;
+            player.load(animationPath);
+            
+            // Return to idle after animation
+            setTimeout(() => {
+                if (currentState === state) {
+                    triggerState('idle');
+                }
+            }, 3000);
+        }
+
+        function updateDebugInfo() {
+            document.getElementById('currentState').textContent = currentState;
+        }
+
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debugBar').style.display = debugMode ? 'block' : 'none';
+        }
+
+        function updateCharacterFromText(text) {
+            const lowerText = text.toLowerCase();
+            
+            // Check for symptoms in order of priority
+            if (lowerText.includes('fever') || lowerText.includes('temperature')) {
+                triggerState('fever');
+                addSymptom('fever/temperature');
+            } else if (lowerText.includes('cough')) {
+                triggerState('cough');
+                addSymptom('cough');
+            } else if (lowerText.includes('headache') || lowerText.includes('migraine')) {
+                triggerState('headache');
+                addSymptom('headache');
+            } else if (lowerText.includes('breath') || lowerText.includes('wheez')) {
+                triggerState('breathe');
+                addSymptom('breathing difficulty');
+            } else if (lowerText.includes('stomach') || lowerText.includes('abdominal') || lowerText.includes('tummy')) {
+                triggerState('abdominal');
+                addSymptom('abdominal pain');
+            } else if (lowerText.includes('throat') || lowerText.includes('tonsil')) {
+                triggerState('throat');
+                addSymptom('throat pain');
+            } else if (lowerText.includes('chest')) {
+                triggerState('chest');
+                addSymptom('chest pain');
+            } else if (lowerText.includes('itch') || lowerText.includes('rash')) {
+                triggerState('itch');
+                addSymptom('itching/rash');
+            } else if (lowerText.includes('dizz') || lowerText.includes('faint')) {
+                triggerState('dizzy');
+                addSymptom('dizziness');
+            } else if (lowerText.includes('sneez') || lowerText.includes('runny') || lowerText.includes('nasal')) {
+                triggerState('nasal');
+                addSymptom('nasal symptoms');
+            }
+        }
+
+        function addSymptom(symptom) {
+            if (!discoveredSymptoms.has(symptom)) {
+                discoveredSymptoms.add(symptom);
+                updateSymptomList();
+                updateProgress();
+            }
+        }
+
+        function updateSymptomList() {
+            const symptomList = document.getElementById('symptomList');
+            if (discoveredSymptoms.size === 0) {
+                symptomList.innerHTML = '<li class="symptom-item">Start asking questions to discover symptoms...</li>';
+            } else {
+                symptomList.innerHTML = Array.from(discoveredSymptoms)
+                    .map(symptom => `<li class="symptom-item revealed">✓ ${symptom}</li>`)
+                    .join('');
+            }
+        }
+
+        function updateProgress() {
+            messageCount++;
+            const progressBar = document.getElementById('progressBar');
+            const progress = Math.min((discoveredSymptoms.size / 5) * 100, 100); // Assume 5 key symptoms
+            progressBar.style.width = progress + '%';
+        }
+
+        function seedInitialStates() {
+            if (!patientData.symptoms) return;
+            
+            const symptomText = patientData.symptoms.join(' ').toLowerCase();
+            setTimeout(() => updateCharacterFromText(symptomText), 1000);
+        }
+
+        // Chat functionality
+        function addMessage(content, isDoctor = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isDoctor ? 'Dr' : patientName[0]}</div>
+                <div class="message-content">${content}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Trigger character animations for patient responses
+            if (!isDoctor) {
+                updateCharacterFromText(content);
+            }
+            
+            updateProgress();
+        }
+
+        function showTyping() {
+            document.getElementById('typing').style.display = 'block';
+        }
+
+        function hideTyping() {
+            document.getElementById('typing').style.display = 'none';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            document.getElementById('sendBtn').disabled = true;
+            showTyping();
+            
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                if (data.response) {
+                    addMessage(data.response, false);
+                    
+                    if (data.should_end_chat) {
+                        setTimeout(() => {
+                            alert('This consultation has ended. Thank you!');
+                        }, 2000);
+                    }
+                } else {
+                    addMessage("I'm sorry, I didn't understand that. Could you please rephrase?", false);
+                }
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage("I'm having trouble responding right now. Please try again.", false);
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Quiz functionality
+        function submitDiagnosis() {
+            const diagnosis = document.getElementById('diagnosisInput').value.trim();
+            if (!diagnosis) {
+                alert('Please enter a diagnosis first.');
+                return;
+            }
+            
+            fetch('/submit_diagnosis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    diagnosis: diagnosis
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('diagnosisResult');
+                resultDiv.style.display = 'block';
+                
+                if (data.correct) {
+                    resultDiv.className = 'quiz-result correct';
+                    resultDiv.textContent = '✅ Correct! Well done!';
+                } else {
+                    resultDiv.className = 'quiz-result incorrect';
+                    resultDiv.textContent = '❌ Incorrect. Keep investigating!';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error checking diagnosis. Please try again.');
+            });
+        }
+
+        function getHint() {
+            fetch('/get_hint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const hintDiv = document.getElementById('hintDisplay');
+                hintDiv.style.display = 'block';
+                hintDiv.textContent = '💡 ' + data.hint;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error getting hint. Please try again.');
+            });
+        }
+
+        function generateMCQ() {
+            // This would call the MCQ generation endpoint
+            // For now, show a placeholder
+            const mcqContainer = document.getElementById('mcqContainer');
+            mcqContainer.style.display = 'block';
+            mcqContainer.innerHTML = `
+                <div class="mcq-question">
+                    <h5>Which of the following is most likely given the patient's presentation?</h5>
+                    <div class="mcq-option" onclick="selectOption(this)">Option A: Common cold</div>
+                    <div class="mcq-option" onclick="selectOption(this)">Option B: ${patientData.condition}</div>
+                    <div class="mcq-option" onclick="selectOption(this)">Option C: Seasonal allergies</div>
+                    <div class="mcq-option" onclick="selectOption(this)">Option D: Stress-related symptoms</div>
+                </div>
+            `;
+        }
+
+        function selectOption(element) {
+            // Remove previous selection
+            document.querySelectorAll('.mcq-option').forEach(opt => opt.classList.remove('selected'));
+            // Add selection to clicked option
+            element.classList.add('selected');
+        }
+
+        function saveNotes() {
+            const notes = document.getElementById('clinicalNotes').value;
+            localStorage.setItem(`notes_${patientData.name}`, notes);
+            alert('Notes saved locally!');
+        }
+
+        function resetConversation() {
+            if (confirm('Are you sure you want to start a new session?')) {
+                fetch('/reset_conversation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('messages').innerHTML = '';
+                        discoveredSymptoms.clear();
+                        messageCount = 0;
+                        updateSymptomList();
+                        updateProgress();
+                        triggerState('idle');
+                    }
+                });
+            }
+        }
+
+        function newPatient() {
+            if (confirm('Are you sure you want to generate a new patient?')) {
+                window.location.href = '/';
+            }
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('messageInput').focus();
+            seedInitialStates();
+            updateSymptomList();
+            
+            // Load saved notes if they exist
+            const savedNotes = localStorage.getItem(`notes_${patientData.name}`);
+            if (savedNotes) {
+                document.getElementById('clinicalNotes').value = savedNotes;
+            }
+        });
+    </script>
+</body>
+</html>

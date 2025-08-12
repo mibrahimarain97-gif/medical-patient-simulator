@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation with {{ patient_data.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .patient-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .patient-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .patient-details h2 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+        .patient-details p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        .diagnostic-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-left: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .diagnostic-info h4 {
+            margin: 0 0 8px 0;
+            font-size: 1em;
+            color: #fff;
+        }
+        .diagnostic-info .condition {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .diagnostic-info .symptoms {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+        .diagnostic-info .symptom-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin: 2px;
+            display: inline-block;
+            font-size: 0.7em;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #333;
+        }
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #229954;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .message.doctor {
+            flex-direction: row-reverse;
+        }
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .doctor .message-avatar {
+            background: #27ae60;
+        }
+        .patient .message-avatar {
+            background: #e74c3c;
+        }
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+        .doctor .message-content {
+            background: #27ae60;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .patient .message-content {
+            background: #ecf0f1;
+            color: #2c3e50;
+            border-bottom-left-radius: 5px;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .message-input:focus {
+            border-color: #3498db;
+        }
+        .send-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        .send-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+        }
+        .send-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .typing-indicator {
+            display: none;
+            color: #7f8c8d;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        .welcome-message {
+            background: #dff0d8;
+            border: 1px solid #d6e9c6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #3c763d;
+        }
+        .patient-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .patient-summary h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .patient-summary .trait {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin: 2px;
+            font-size: 0.8em;
+        }
+        .mcq-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .mcq-section h3 {
+            margin: 0 0 15px 0;
+            color: #856404;
+        }
+        .mcq-question {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .mcq-question h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .mcq-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mcq-option {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mcq-option:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+        .mcq-option.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        .mcq-option.correct {
+            border-color: #27ae60;
+            background: #d4edda;
+        }
+        .mcq-option.incorrect {
+            border-color: #e74c3c;
+            background: #f8d7da;
+        }
+        .mcq-explanation {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .mcq-explanation.show {
+            display: block;
+        }
+        .mcq-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .mcq-toggle {
+            display: none;
+        }
+        
+        .consultation-end {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #27ae60;
+        }
+        
+        .end-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .end-options .btn {
+            padding: 12px 24px;
+            font-size: 1em;
+        }
+        /* Suggestion bubbles as pills */
+        #suggestionBubbles .btn {
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-size: 1em;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="patient-info">
+            <div class="patient-avatar">
+                {{ patient_data.name[0] }}
+            </div>
+            <div class="patient-details">
+                <h2>{{ patient_data.name }}</h2>
+                <p>{{ patient_data.age }} years old • {{ patient_data.gender }} • {{ patient_data.occupation }}</p>
+            </div>
+        </div>
+        
+        <div class="diagnostic-info">
+            <h4>🔍 Diagnostic Info (Debug)</h4>
+            <div class="condition">{{ patient_data.condition_name }}</div>
+            <div class="symptoms">
+                {% for symptom in patient_data.symptoms[:8] %}
+                    <span class="symptom-tag">{{ symptom }}</span>
+                {% endfor %}
+                {% if patient_data.symptoms|length > 8 %}
+                    <span class="symptom-tag">+{{ patient_data.symptoms|length - 8 }} more</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="generateMCQ()">Generate MCQ</button>
+            <button class="btn btn-secondary" onclick="resetConversation()">New Session</button>
+            <button class="btn btn-secondary" onclick="newPatient()">New Patient</button>
+            <button class="btn btn-secondary" onclick="goHome()">← Back to Home</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="welcome-message">
+            <strong>Clinical Scenario:</strong> {{ patient_data.name }} has come to see you with concerning symptoms. Begin your consultation by greeting the patient and taking a thorough history.
+        </div>
+        
+        <div class="patient-summary">
+            <h4>Patient Background Information:</h4>
+            <p><strong>Personality Type:</strong> {{ patient_data.personality_type }}</p>
+            <p><strong>Communication Style:</strong> {{ patient_data.communication_style }}</p>
+            <div>
+                <strong>Key Traits:</strong>
+                {% for trait in patient_data.personality_traits.split(',') %}
+                    <span class="trait">{{ trait.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="mcq-section" id="mcqSection" style="display: none;">
+            <h3>📝 Multiple Choice Questions</h3>
+            <div id="mcqQuestions"></div>
+            <div class="mcq-buttons">
+                <button class="btn btn-primary" onclick="checkAnswers()">Check Answers</button>
+                <button class="btn btn-secondary" onclick="hideMCQ()">Hide MCQ</button>
+            </div>
+        </div>
+        
+        <div class="messages" id="messages">
+            <!-- Messages will be added here -->
+        </div>
+        
+        <div class="typing-indicator" id="typing">
+            {{ patient_data.name }} is typing...
+        </div>
+        
+        <!-- Suggestion Bubbles (moved above input area) -->
+        <div id="suggestionBubbles" style="display: flex; gap: 12px; margin-bottom: 12px; justify-content: flex-start; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="showHint()">💡 Hint</button>
+            <button class="btn btn-secondary" onclick="showDiagnosisModal()">🩺 Give Diagnosis</button>
+            <button class="btn btn-primary" onclick="newPatient()">🆕 New Patient</button>
+        </div>
+        <div class="input-area">
+            <input type="text" class="message-input" id="messageInput" 
+                   placeholder="Type your question or response to the patient..." 
+                   onkeypress="handleKeyPress(event)">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+        
+        <!-- Diagnosis Modal -->
+        <div id="diagnosisModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;">
+            <div style="background:white; padding:30px 40px; border-radius:12px; box-shadow:0 2px 16px rgba(0,0,0,0.2); min-width:320px; max-width:90vw;">
+                <h3>Enter Your Diagnosis</h3>
+                <input type="text" id="diagnosisInput" style="width:100%; padding:10px; margin:15px 0; font-size:1em; border-radius:6px; border:1px solid #ccc;">
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button class="btn btn-primary" style="background: #27ae60; color: white;" onclick="submitDiagnosis()">Submit</button>
+                    <button class="btn btn-secondary" style="background: #555; color: white;" onclick="hideDiagnosisModal()">Cancel</button>
+                </div>
+                <div id="diagnosisResult" style="margin-top:10px; color:#e74c3c; display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const patientName = '{{ patient_data.name }}';
+        let mcqData = null;
+        
+        function addMessage(content, isDoctor = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isDoctor ? 'Dr' : patientName[0]}</div>
+                <div class="message-content">${content}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typing').style.display = 'block';
+        }
+        
+        function hideTyping() {
+            document.getElementById('typing').style.display = 'none';
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add doctor's message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Disable send button and show typing
+            document.getElementById('sendBtn').disabled = true;
+            showTyping();
+            
+            // Send to backend
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                if (data.response) {
+                    addMessage(data.response, false);
+                    
+                    // Check if chat should end
+                    if (data.should_end_chat) {
+                        setTimeout(() => {
+                            endConsultation();
+                        }, 2000);
+                    }
+                } else {
+                    addMessage("I'm sorry, I didn't understand that. Could you please rephrase?", false);
+                }
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage("I'm having trouble responding right now. Please try again.", false);
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            });
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function generateMCQ() {
+            fetch('/generate_mcq', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.questions) {
+                    mcqData = data;
+                    displayMCQ(data.questions);
+                    document.getElementById('mcqSection').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error generating MCQ:', error);
+            });
+        }
+        
+        function displayMCQ(questions) {
+            const mcqContainer = document.getElementById('mcqQuestions');
+            mcqContainer.innerHTML = '';
+            
+            questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'mcq-question';
+                questionDiv.innerHTML = `
+                    <h4>Question ${index + 1}:</h4>
+                    <p>${question.question}</p>
+                    <div class="mcq-options">
+                        ${question.options.map((option, optIndex) => `
+                            <div class="mcq-option" onclick="selectOption(this, ${index}, ${optIndex})">
+                                ${String.fromCharCode(65 + optIndex)}. ${option}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mcq-explanation" id="explanation-${index}">
+                        <strong>Explanation:</strong> ${question.explanation}
+                    </div>
+                `;
+                mcqContainer.appendChild(questionDiv);
+            });
+        }
+        
+        function selectOption(element, questionIndex, optionIndex) {
+            const questionDiv = element.closest('.mcq-question');
+            const options = questionDiv.querySelectorAll('.mcq-option');
+            
+            // Remove previous selections
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // Select current option
+            element.classList.add('selected');
+            
+            // Store selection
+            if (!mcqData.selections) mcqData.selections = {};
+            mcqData.selections[questionIndex] = optionIndex;
+        }
+        
+        function checkAnswers() {
+            if (!mcqData || !mcqData.questions) return;
+            
+            const questions = document.querySelectorAll('.mcq-question');
+            
+            mcqData.questions.forEach((question, index) => {
+                const questionDiv = questions[index];
+                const options = questionDiv.querySelectorAll('.mcq-option');
+                const selectedIndex = mcqData.selections ? mcqData.selections[index] : -1;
+                
+                options.forEach((option, optIndex) => {
+                    option.classList.remove('correct', 'incorrect');
+                    
+                    if (optIndex === question.options.indexOf(question.correct_answer)) {
+                        option.classList.add('correct');
+                    } else if (optIndex === selectedIndex && selectedIndex !== question.options.indexOf(question.correct_answer)) {
+                        option.classList.add('incorrect');
+                    }
+                });
+                
+                // Show explanation
+                const explanation = questionDiv.querySelector('.mcq-explanation');
+                explanation.classList.add('show');
+            });
+        }
+        
+        function hideMCQ() {
+            document.getElementById('mcqSection').style.display = 'none';
+        }
+        
+        function resetConversation() {
+            if (confirm('Are you sure you want to start a new session? This will clear the current conversation.')) {
+                fetch('/reset_conversation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('messages').innerHTML = '';
+                        hideMCQ();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+        
+        function newPatient() {
+            if (confirm('Are you sure you want to generate a new patient? This will end the current consultation.')) {
+                fetch('/new_patient', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+        
+        function endConsultation() {
+            // Disable input
+            document.getElementById('messageInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            // Add end consultation message
+            addMessage("🏥 Consultation ended. Thank you for using the Medical Patient Simulator!", true);
+            
+            // Show options to continue
+            setTimeout(() => {
+                const endDiv = document.createElement('div');
+                endDiv.className = 'consultation-end';
+                endDiv.innerHTML = `
+                    <div class="end-options">
+                        <button onclick="newPatient()" class="btn btn-primary">New Patient</button>
+                        <button onclick="goHome()" class="btn btn-secondary">Go Home</button>
+                    </div>
+                `;
+                document.getElementById('messages').appendChild(endDiv);
+            }, 1000);
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        // Diagnosis Modal Logic
+        function showDiagnosisModal() {
+            document.getElementById('diagnosisModal').style.display = 'flex';
+            document.getElementById('diagnosisInput').value = '';
+            document.getElementById('diagnosisResult').style.display = 'none';
+        }
+        function hideDiagnosisModal() {
+            document.getElementById('diagnosisModal').style.display = 'none';
+        }
+        function submitDiagnosis() {
+            const diagnosis = document.getElementById('diagnosisInput').value.trim();
+            if (!diagnosis) return;
+            fetch('/submit_diagnosis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diagnosis })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.correct) {
+                    hideDiagnosisModal();
+                    addMessage('🏥 Correct diagnosis! Consultation ended. Thank you for using the Medical Patient Simulator!', true);
+                    setTimeout(() => { endConsultation(); }, 1000);
+                } else {
+                    document.getElementById('diagnosisResult').textContent = 'Incorrect diagnosis. Please continue the consultation.';
+                    document.getElementById('diagnosisResult').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('diagnosisResult').textContent = 'Error submitting diagnosis.';
+                document.getElementById('diagnosisResult').style.display = 'block';
+            });
+        }
+        // Hint Bubble Logic
+        function showHint() {
+            fetch('/get_hint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hint) {
+                    addMessage('💡 Hint: ' + data.hint, false);
+                }
+            });
+        }
+        
+        // Focus on input when page loads
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>

@@ -2,21 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>3D Patient (Procedural)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; overflow: hidden; }
     .main-container { display: flex; height: 100vh; width: 100vw; }
-    .main-container.with-controls { display: grid; grid-template-columns: 360px 1fr 50%; column-gap: 12px; }
-    .control-panel { grid-column: 1; width: 360px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 20px; overflow-y: auto; position: relative; display: none; }
+    .main-container.with-controls { display: grid; grid-template-columns: 360px 1fr 1fr; column-gap: 12px; }
+    .control-panel { 
+      grid-column: 1; 
+      width: 360px; 
+      background: rgba(255,255,255,0.3); 
+      backdrop-filter: blur(10px); 
+      padding: 20px; 
+      overflow-y: auto; 
+      position: relative; 
+      display: none;
+      border-right: 2px solid rgba(255,255,255,0.2);
+      box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+    }
     .control-section { margin-bottom: 25px; }
-    .control-section h3 { margin-bottom: 15px; color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+    .control-section h3 { margin-bottom: 15px; color: #000; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-weight: bold; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .action-btn { padding: 12px 8px; border: none; border-radius: 8px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3); }
     .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(76,175,80,0.4); }
     .action-btn:active { transform: translateY(1px); background: linear-gradient(45deg, #45a049, #4CAF50); }
-    .clear-btn { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+
     
     /* Menu Styles */
     .menu-btn {
@@ -81,11 +92,7 @@
     .menu-container {
         position: relative;
     }
-    .log-container { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8em; height: 200px; overflow-y: auto; border: 2px solid #333; }
-    .log-entry { margin-bottom: 5px; padding: 2px 0; }
-    .log-entry.success { color: #00ff00; }
-    .log-entry.error { color: #ff4444; }
-    .log-entry.info { color: #44aaff; }
+
     /* Chat Panel - 65% width */
     .chat-panel { 
       width: 65%; 
@@ -1091,27 +1098,451 @@
 
 
     
-    /* Control Panel Responsive Styles */
+          /* Mobile Layout Styles */
     @media (max-width: 768px) {
+      body {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .main-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+      
       .main-container.with-controls {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: none;
+        grid-template-rows: none;
       }
       
+      /* Mobile Control Panel - Avatar Area Overlay */
       .control-panel {
-        grid-row: 1;
-        width: 100%;
-        max-height: 300px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 40vh;
+        min-height: 250px;
+        max-height: 350px;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        padding: 15px;
+        overflow-y: auto;
+        grid-column: unset;
+        grid-row: unset;
+        display: none;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        border-bottom: 2px solid rgba(52, 152, 219, 0.3);
       }
       
+      .control-panel.mobile-active {
+        display: block;
+      }
+      
+      /* Mobile Character Panel - Half Screen */
       .character-panel {
-        grid-row: 2;
-        height: 300px;
+        width: 100%;
+        height: 40vh;
+        min-height: 250px;
+        max-height: 350px;
+        position: relative;
+        grid-column: unset;
+        grid-row: unset;
       }
       
+      .with-controls .character-panel {
+        grid-column: unset;
+      }
+      
+      /* Mobile Chat Panel - Half Screen */
       .chat-panel {
-        grid-row: 3;
         width: 100%;
+        height: 60vh;
+        min-height: 400px;
+        padding: 15px;
+        grid-column: unset;
+        grid-row: unset;
+      }
+      
+      .with-controls .chat-panel {
+        grid-column: unset;
+      }
+      
+      /* Mobile Play Action Button */
+      .double-click-btn {
+        bottom: 10px;
+        padding: 2px 2px;
+        font-size: 0.5em;
+        border-radius: 20px;
+      }
+      
+      /* Mobile Action Buttons */
+      .action-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      
+      .action-btn {
+        padding: 8px 4px;
+        font-size: 0.7em;
+        border-radius: 5px;
+        line-height: 1.2;
+      }
+      
+      /* Mobile Control Section */
+      .control-section h3 {
+        font-size: 0.9em;
+        margin-bottom: 8px;
+      }
+      
+      .control-section {
+        margin-bottom: 15px;
+      }
+      
+      /* Mobile Close Button */
+      .mobile-close-btn {
+        font-size: 18px !important;
+        width: 25px !important;
+        height: 25px !important;
+        padding: 3px !important;
+      }
+      
+      /* Mobile Header */
+      .patient-header {
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+      }
+      
+      .patient-info h2 {
+        font-size: 1.1em;
+      }
+      
+      .patient-info p {
+        font-size: 0.8em;
+      }
+      
+      .patient-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2em;
+      }
+      
+      /* Mobile Messages */
+      .messages {
+        min-height: 200px;
+        padding: 8px;
+        margin-bottom: 12px;
+      }
+      
+      .messages.full-height {
+        max-height: calc(60vh - 200px);
+      }
+      
+      .messages.compact-height {
+        max-height: 180px;
+      }
+      
+      .message {
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+      
+      .message-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9em;
+      }
+      
+      .message-content {
+        max-width: 85%;
+        padding: 10px 12px;
+        border-radius: 12px;
+      }
+      
+      .message-content .text {
+        font-size: 0.85em;
+      }
+      
+      /* Mobile Welcome Message */
+      .welcome-message {
+        padding: 12px;
+        margin: 10px;
+        font-size: 0.75em;
+        line-height: 1.4;
+      }
+      
+      /* Mobile Input Area */
+      .input-area {
+        padding: 15px;
+        gap: 8px;
+        border-radius: 8px;
+        position: relative;
+        z-index: 10;
+      }
+      
+      .message-input {
+        padding: 10px;
+        font-size: 0.85em;
+        border-radius: 15px;
+      }
+      
+      .send-btn {
+        padding: 10px 16px;
+        font-size: 0.9em;
+        border-radius: 15px;
+      }
+      
+      /* Mobile Suggestion Bubbles */
+      .suggestion-bubbles {
+        padding: 0 15px;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      
+      .btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+        border-radius: 15px;
+      }
+      
+      /* Mobile Menu */
+      .menu-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
+        border-radius: 6px;
+      }
+      
+      .menu-dropdown {
+        right: 0;
+        min-width: 200px;
+        margin-top: 5px;
+      }
+      
+      .menu-item {
+        padding: 10px 16px;
+        font-size: 0.9em;
+      }
+      
+      /* Mobile 3D Canvas Adjustments */
+      .canvas-pane {
+        width: 100%;
+        height: 100%;
+      }
+      
+      #threeContainer {
+        width: 100%;
+        height: 100%;
+      }
+      
+      .action-status {
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        font-size: 0.8em;
+        border-radius: 6px;
+      }
+      
+      .status-display {
+        top: 50px;
+        left: 10px;
+        padding: 8px 10px;
+        font-size: 0.8em;
+        min-width: 150px;
+        border-radius: 6px;
+      }
+      
+      .badge {
+        top: 85px;
+        left: 10px;
+        padding: 4px 8px;
+        font-size: 0.7em;
+        border-radius: 4px;
+      }
+      
+      .emoji-display {
+        font-size: 1.5em;
+        top: 20%;
+      }
+      
+      /* Mobile MCQ Section */
+      .mcq-section {
+        margin: 0 15px;
+        padding: 12px;
+        border-radius: 8px;
+      }
+      
+      .mcq-section h3 {
+        font-size: 1em;
+        margin-bottom: 12px;
+      }
+      
+      .mcq-question {
+        padding: 12px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+      }
+      
+      .mcq-question h4 {
+        font-size: 0.9em;
+        margin-bottom: 8px;
+      }
+      
+      .mcq-option {
+        padding: 8px;
+        font-size: 0.85em;
+        border-radius: 4px;
+      }
+      
+      .mcq-buttons {
+        gap: 8px;
+        margin-top: 12px;
+      }
+      
+      /* Mobile Typing Indicator */
+      .typing-indicator {
+        padding: 15px;
+        font-size: 0.85em;
+      }
+      
+      /* Mobile Audio Button */
+      .audio-btn {
+        padding: 6px 10px;
+        font-size: 0.8em;
+        border-radius: 4px;
+        gap: 4px;
+      }
+      
+      /* Mobile Message Actions */
+      .message-actions {
+        margin-top: 6px;
+        padding-top: 6px;
+        gap: 8px;
+      }
+      
+      .detected-actions {
+        font-size: 0.75em;
+        margin-top: 4px;
+      }
+      
+      /* Mobile Modal Styles */
+      .modal {
+        padding: 10px;
+      }
+      
+      .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 5% auto;
+        max-height: 90vh;
+      }
+      
+      .modal-header {
+        padding: 15px 20px;
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+      }
+      
+      .modal-header h2 {
+        font-size: 1.3em;
+      }
+      
+      .modal-body {
+        padding: 20px;
+        font-size: 0.9em;
+      }
+      
+      .patient-details-section {
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .patient-details-section h3 {
+        font-size: 1.1em;
+        margin-bottom: 12px;
+      }
+      
+      .trait, .symptom-tag {
+        padding: 5px 10px;
+        font-size: 0.8em;
+        margin: 3px 5px 3px 0;
+      }
+      
+      /* Mobile Feedback Modal */
+      .feedback-question {
+        padding: 20px;
+        margin-bottom: 25px;
+      }
+      
+      .feedback-question h3 {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+      }
+      
+      .likert-scale {
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      
+      .likert-option label {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9em;
+      }
+      
+      .likert-labels {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+        font-size: 0.8em;
+      }
+      
+      .text-input {
+        padding: 15px;
+        font-size: 0.9em;
+        min-height: 100px;
+      }
+      
+      .modal-actions {
+        gap: 15px;
+        margin-top: 25px;
+        flex-direction: column;
+      }
+      
+      .modal-btn {
+        padding: 12px 25px;
+        font-size: 0.9em;
+        width: 100%;
+      }
+      
+      /* Mobile Diagnosis Modal */
+      #diagnosisModal > div {
+        min-width: 280px;
+        max-width: 95vw;
+        padding: 25px 20px;
+      }
+      
+      #diagnosisModal h3 {
+        font-size: 1.2em;
+        margin-bottom: 15px;
+      }
+      
+      #diagnosisInput {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      
+      #diagnosisModal .btn {
+        padding: 10px 20px;
+        font-size: 0.9em;
       }
     }
     
@@ -1312,6 +1743,35 @@
         min-width: 200px;
       }
     }
+    
+    /* Play Action Button - Positioned under the avatar */
+    .double-click-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: 2px solid rgba(52, 152, 219, 0.8);
+      padding: 5px 5px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 0.5em;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      z-index: 20;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .double-click-btn:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    .double-click-btn:active {
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
   <script src="/static/vendor/three/three.min.js"></script>
   <script src="/static/vendor/three/OrbitControls.js"></script>
@@ -1319,9 +1779,9 @@
 <body>
   <div class="main-container">
     <div class="control-panel">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0;">🎭 Character Actions</h3>
-        <button class="close" onclick="toggleManualControls()" style="background: none; border: none; color: #333; font-size: 24px; cursor: pointer; padding: 5px;">&times;</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #000; text-shadow: 0 1px 2px rgba(255,255,255,0.8); font-size: 1em;">🎭 Character Actions</h3>
+        <button class="close mobile-close-btn" onclick="toggleManualControls()" style="background: rgba(255,255,255,0.8); border: none; color: #333; font-size: 24px; cursor: pointer; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">&times;</button>
       </div>
       <div class="control-section">
         <div class="action-grid">
@@ -1339,13 +1799,7 @@
           <button class="action-btn" onclick="performAction('chest')">❤️ Chest</button>
         </div>
       </div>
-      <div class="control-section">
-        <h3>📝 Action Log</h3>
-        <div class="log-container" id="actionLog">
-          <div class="log-entry info">[SYSTEM] 3D scene initializing…</div>
-        </div>
-        <button class="clear-btn" onclick="clearLog()">Clear Log</button>
-      </div>
+
     </div>
     <div class="character-panel">
       <div class="canvas-pane">
@@ -1359,6 +1813,11 @@
       <div class="controls">
         <!-- Menu moved to patient header -->
       </div>
+      
+      <!-- Play Action Button positioned under the avatar -->
+      <button class="double-click-btn" onclick="toggleManualControls()">
+        ▶️ Play Action
+      </button>
     </div>
     
     <div class="chat-panel">
@@ -1377,7 +1836,6 @@
             ☰ Menu
           </button>
           <div class="menu-dropdown" id="menuDropdown">
-            <button class="menu-item" onclick="toggleManualControls()">🖱️ Double Click</button>
             <button class="menu-item" onclick="newPatient()">🆕 New Patient</button>
             <button class="menu-item" onclick="goHome()">🏠 Home</button>
             <button class="menu-item" onclick="generateMCQ()">📝 Generate MCQ</button>
@@ -1487,8 +1945,7 @@
     const INTER_ACTION_DELAY = 500; // 1.5s between different actions  
     const CYCLE_DELAY = 500; // 2 seconds between cycles
     
-    function log(msg, type='info'){ const el=document.getElementById('actionLog'); const t=new Date().toLocaleTimeString(); const d=document.createElement('div'); d.className=`log-entry ${type}`; d.textContent=`[${t}] ${msg}`; el.appendChild(d); el.scrollTop=el.scrollHeight; console[type==='error'?'error':'log'](`${type.toUpperCase()}: ${msg}`); }
-    function clearLog(){ document.getElementById('actionLog').innerHTML='<div class="log-entry info">[SYSTEM] Log cleared</div>'; }
+    function log(msg, type='info'){ console[type==='error'?'error':'log'](`${type.toUpperCase()}: ${msg}`); }
     function updateStatus(s){ const el=document.getElementById('statusDisplay'); if(el) el.textContent=s; log(`Status: ${s}`,'info'); }
 
     // Dynamic loader to ensure THREE/controls are available
@@ -1530,7 +1987,14 @@
     const container=document.getElementById('threeContainer');
     function initThree(){
       scene=new THREE.Scene(); scene.background=new THREE.Color(0xbfd9ff);
-      camera=new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 100); camera.position.set(0,2.0,6);
+      camera=new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 100); 
+      
+      // Set initial camera position based on screen size
+      if (window.innerWidth <= 768) {
+        camera.position.set(0, 1.8, 5);
+      } else {
+        camera.position.set(0, 2.0, 6);
+      }
       renderer=new THREE.WebGLRenderer({antialias:true});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
       renderer.setSize(container.clientWidth,container.clientHeight);
@@ -1545,15 +2009,69 @@
       const dir=new THREE.DirectionalLight(0xffffff,1.0); dir.position.set(3,5,2); dir.castShadow=true; scene.add(dir);
       const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0xd3f2d3,roughness:1})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
       try{
-        if(THREE.OrbitControls){ controls=new THREE.OrbitControls(camera, renderer.domElement); controls.target.set(0,1.2,0); controls.update(); }  // Adjusted target for lowered head
-        else { log('OrbitControls not available; using fixed camera','info'); }
+        if(THREE.OrbitControls){ 
+          controls=new THREE.OrbitControls(camera, renderer.domElement); 
+          
+          // Set initial target based on screen size
+          if (window.innerWidth <= 768) {
+            controls.target.set(0, 1.0, 0);
+          } else {
+            controls.target.set(0, 1.2, 0);
+          }
+          
+          // Touch-friendly settings for mobile
+          if (window.innerWidth <= 768) {
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.5;
+            controls.zoomSpeed = 0.5;
+            controls.panSpeed = 0.5;
+          }
+          
+          controls.update(); 
+        } else { 
+          log('OrbitControls not available; using fixed camera','info'); 
+        }
       }catch(e){ log('OrbitControls init failed: '+e.message,'error'); }
       clock=new THREE.Clock();
       window.addEventListener('resize', onResize);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(onResize, 100); // Delay to ensure viewport update
+      });
       if (window.ResizeObserver){ const ro=new ResizeObserver(()=>onResize()); ro.observe(container); }
       animate();
     }
-    function onResize(){ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+    function onResize(){ 
+      const w=container.clientWidth,h=container.clientHeight; 
+      camera.aspect=w/h; 
+      camera.updateProjectionMatrix(); 
+      renderer.setSize(w,h); 
+      
+      // Mobile specific adjustments
+      if (window.innerWidth <= 768) {
+        // Adjust camera position for mobile
+        camera.position.set(0, 1.8, 5);
+        if (controls) {
+          controls.target.set(0, 1.0, 0);
+          controls.update();
+        }
+        // Scale character for mobile
+        if (rig.root) {
+          rig.root.scale.set(0.8, 0.8, 0.8);
+        }
+      } else {
+        // Desktop camera position
+        camera.position.set(0, 2.0, 6);
+        if (controls) {
+          controls.target.set(0, 1.2, 0);
+          controls.update();
+        }
+        // Normal scale for desktop
+        if (rig.root) {
+          rig.root.scale.set(1, 1, 1);
+        }
+      }
+    }
     function animate(){ requestAnimationFrame(animate); const dt=clock.getDelta(); updateRig(dt); updateEffects(dt); renderer.render(scene,camera); }
 
     // Procedural character rig
@@ -1564,7 +2082,15 @@
       const skinMat=new THREE.MeshStandardMaterial({ color:0xffdbac, metalness:0.0, roughness:0.9 });
       const hairMat=new THREE.MeshStandardMaterial({ color:0x3b2e2a, metalness:0.0, roughness:1.0 });
 
-      const root=new THREE.Group(); root.position.set(0,0,0); scene.add(root);
+      const root=new THREE.Group(); 
+      root.position.set(0,0,0); 
+      
+      // Scale down for mobile
+      if (window.innerWidth <= 768) {
+        root.scale.set(0.8, 0.8, 0.8);
+      }
+      
+      scene.add(root);
       const pelvis=new THREE.Group(); pelvis.position.set(0,0.9,0); root.add(pelvis);
       const torso=new THREE.Mesh(new THREE.CapsuleGeometry(0.22,0.55,8,16), bodyMat); torso.castShadow=true; torso.receiveShadow=true; torso.position.set(0,0.4,0); pelvis.add(torso);
       const chest=new THREE.Group(); chest.position.set(0,0.5,0); torso.add(chest);
@@ -1861,54 +2387,7 @@
     function handsToStomach(){ const t0=performance.now(); const dur=700; const startL=rig.shoulderL.rotation.z, startR=rig.shoulderR.rotation.z; activeEffects.push({ ttl:dur/1000, update:()=>{ const t=Math.min(1,(performance.now()-t0)/dur); const e=t<0.5 ? (t*2) : (2-t*2); rig.shoulderL.rotation.z = -0.6*e; rig.shoulderR.rotation.z = 0.6*e; }, cleanup:()=>{ rig.shoulderL.rotation.z=0; rig.shoulderR.rotation.z=0; } }); }
     function thermometerMesh(duration=3){ const g=new THREE.CylinderGeometry(0.01,0.01,0.25,12); const m=new THREE.MeshStandardMaterial({ color:0xff4444, emissive:0x550000 }); const tube=new THREE.Mesh(g,m); const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.025,16,16),m); const mouth=rig.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0.12,0,0.02)); tube.position.copy(mouth); bulb.position.copy(mouth).add(new THREE.Vector3(0,-0.14,0)); scene.add(tube,bulb); activeEffects.push({ ttl:duration, cleanup:()=>{ scene.remove(tube); scene.remove(bulb); g.dispose(); m.dispose(); } }); }
 
-    // Chat functionality - improved version from 2D
-    function addMessage(content, isDoctor = false) {
-      const messagesDiv = document.getElementById('messages');
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
-      
-      // Create avatar
-      const avatarDiv = document.createElement('div');
-      avatarDiv.className = 'message-avatar';
-      avatarDiv.textContent = isDoctor ? 'Dr' : patientName[0];
-      
-      // Create content container
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'message-content';
-      
-      // Create text div
-      const textDiv = document.createElement('div');
-      textDiv.className = 'text';
-      textDiv.textContent = content;
-      contentDiv.appendChild(textDiv);
-      
-      // Create bottom actions container for patient messages
-      if (!isDoctor) {
-        const actionsContainer = document.createElement('div');
-        actionsContainer.className = 'message-actions';
-        
-        // Add audio button with label
-        const audioButton = document.createElement('button');
-        audioButton.className = 'audio-btn';
-        audioButton.innerHTML = '🔊 Hear Audio';
-        audioButton.title = 'Generate audio for this message';
-        audioButton.onclick = (event) => generateAudio(content, event);
-        actionsContainer.appendChild(audioButton);
-        
-        contentDiv.appendChild(actionsContainer);
-      }
-      
-      messageDiv.appendChild(avatarDiv);
-      messageDiv.appendChild(contentDiv);
-      messagesDiv.appendChild(messageDiv);
-      
-      // Ensure proper scrolling
-      setTimeout(() => {
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }, 100);
-      
-      return contentDiv; // Return content div for adding detected actions
-    }
+
 
     function handleKeyPress(event) {
       if (event.key === 'Enter') {
@@ -2248,25 +2727,7 @@
       });
     }
 
-    function showHint() {
-      fetch('/get_hint', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.hint) {
-          const contentDiv = addMessage('💡 Hint: ' + data.hint, false);
-          // Add visual styling to hint message
-          contentDiv.style.background = '#fff3cd';
-          contentDiv.style.border = '1px solid #ffeaa7';
-        }
-      })
-      .catch(error => {
-        console.error('Error getting hint:', error);
-        addMessage('Sorry, I had trouble getting a hint. Please try again.', false);
-      });
-    }
+
 
     // Menu toggle function
   function toggleMenu() {
@@ -2286,13 +2747,39 @@
   function toggleManualControls() {
       const controlPanel = document.querySelector('.control-panel');
       const mainContainer = document.querySelector('.main-container');
+      const isMobile = window.innerWidth <= 768;
       
-      if (controlPanel.style.display === 'none') {
-        controlPanel.style.display = 'block';
-        mainContainer.classList.add('with-controls');
-      } else {
+      // Ensure panel has initial state set
+      if (!controlPanel.hasAttribute('data-initialized')) {
         controlPanel.style.display = 'none';
-        mainContainer.classList.remove('with-controls');
+        controlPanel.setAttribute('data-initialized', 'true');
+      }
+      
+      if (isMobile) {
+        // Mobile behavior - avatar area overlay
+        const isCurrentlyOpen = controlPanel.classList.contains('mobile-active') || 
+                               controlPanel.style.display === 'block';
+        
+        if (isCurrentlyOpen) {
+          controlPanel.classList.remove('mobile-active');
+          controlPanel.style.display = 'none';
+          // Keep body scrolling enabled for chat area
+        } else {
+          controlPanel.classList.add('mobile-active');
+          controlPanel.style.display = 'block';
+          // Keep body scrolling enabled for chat area
+        }
+      } else {
+        // Desktop behavior - side panel
+        const isCurrentlyOpen = controlPanel.style.display === 'block';
+        
+        if (isCurrentlyOpen) {
+          controlPanel.style.display = 'none';
+          mainContainer.classList.remove('with-controls');
+        } else {
+          controlPanel.style.display = 'block';
+          mainContainer.classList.add('with-controls');
+        }
       }
     }
 
@@ -2427,23 +2914,53 @@
       });
     }
     
-    // Add message function
+    // Add message function - Fixed version that supports actions
     function addMessage(content, isDoctor = false) {
       const messagesDiv = document.getElementById('messages');
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
       
-      // Create message structure
-      let messageHTML = `
-        <div class="message-avatar">${isDoctor ? 'Dr' : '{{ patient_data.name }}'[0]}</div>
-        <div class="message-content">
-          <div class="text">${content}</div>
-        </div>
-      `;
+      // Create avatar
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'message-avatar';
+      avatarDiv.textContent = isDoctor ? 'Dr' : patientName[0];
       
-      messageDiv.innerHTML = messageHTML;
+      // Create content container
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      
+      // Create text div
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.textContent = content;
+      contentDiv.appendChild(textDiv);
+      
+      // Create bottom actions container for patient messages
+      if (!isDoctor) {
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'message-actions';
+        
+        // Add audio button with label
+        const audioButton = document.createElement('button');
+        audioButton.className = 'audio-btn';
+        audioButton.innerHTML = '🔊 Hear Audio';
+        audioButton.title = 'Generate audio for this message';
+        audioButton.onclick = (event) => generateAudio(content, event);
+        actionsContainer.appendChild(audioButton);
+        
+        contentDiv.appendChild(actionsContainer);
+      }
+      
+      messageDiv.appendChild(avatarDiv);
+      messageDiv.appendChild(contentDiv);
       messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      // Ensure proper scrolling
+      setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, 100);
+      
+      return contentDiv; // Return content div for adding detected actions
     }
 
     // Diagnosis Modal Functions
@@ -2451,36 +2968,6 @@
       document.getElementById('diagnosisModal').style.display = 'flex';
       document.getElementById('diagnosisInput').value = '';
       document.getElementById('diagnosisResult').style.display = 'none';
-    }
-    
-    function hideDiagnosisModal() {
-      document.getElementById('diagnosisModal').style.display = 'none';
-    }
-    
-    function submitDiagnosis() {
-      const diagnosis = document.getElementById('diagnosisInput').value.trim();
-      if (!diagnosis) return;
-      
-      fetch('/submit_diagnosis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ diagnosis })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.correct) {
-          hideDiagnosisModal();
-          addMessage('🏥 Correct diagnosis! Consultation ended. Thank you for using the Medical Patient Simulator!', true);
-          setTimeout(() => { endConsultation(); }, 1000);
-        } else {
-          document.getElementById('diagnosisResult').textContent = 'Incorrect diagnosis. Please continue the consultation.';
-          document.getElementById('diagnosisResult').style.display = 'block';
-        }
-      })
-      .catch(error => {
-        document.getElementById('diagnosisResult').textContent = 'Error submitting diagnosis.';
-        document.getElementById('diagnosisResult').style.display = 'block';
-      });
     }
     
     function hideDiagnosisModal() {

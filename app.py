@@ -24,7 +24,7 @@ client = OpenAI(
 )
 
 # Remove environment variable model selection
-MODEL_NAME = 'mistralai/mistral-small-3.2-24b-instruct:free'  # More reliable model
+MODEL_NAME = 'qwen/qwen-2.5-72b-instruct:free'  # More reliable model
 
 # MODEL_NAMES = [
 #     # === PRIMARY EVALUATION MODELS (6 models) ===
@@ -330,7 +330,7 @@ def get_patient_response(patient_data, conversation_history, user_message, model
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=210,  # Allow up to ~200 words with buffer
+                max_tokens=250,  # Increased to 250 tokens for word limit testing
                 temperature=0.8  # Slightly higher for more natural variation
             )
             content = response.choices[0].message.content.strip() if response.choices[0].message.content else "I'm not sure how to respond to that."
